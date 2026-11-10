@@ -36,15 +36,18 @@ export default function Privacidade() {
           <ul>
             <li><strong>Dados funcionais do servidor</strong>: nome, matrícula, cargo, lotação, situação funcional, data de ingresso e e-mail institucional.</li>
             <li><strong>CPF apenas mascarado</strong> (ex.: ***.456.789-**). O CPF completo nunca é armazenado nem exibido.</li>
+            <li><strong>Ficha do servidor</strong>: lotação e histórico de movimentações, data de nascimento e de ingresso (para a previsão de aposentadoria), cursos e capacitações, competências e indicações para oportunidades.</li>
             <li><strong>Metadados de documentos e processos</strong>: título, tipo, número do processo, datas, status e localização física do arquivo.</li>
+            <li><strong>Atualizações enviadas pelo próprio servidor</strong> (autoatendimento) e a decisão do gestor ou do RH.</li>
             <li><strong>Registros de acesso</strong>: quem consultou, visualizou ou alterou cada informação, quando e de onde (totem ou painel).</li>
           </ul>
         </Secao>
 
         <Secao titulo="Para quê">
           <ul>
-            <li>Permitir que o servidor localize seus documentos funcionais e processos com rapidez.</li>
-            <li>Apoiar o setor de Gestão de Pessoas na organização do acervo, evitando retrabalho e duplicidade.</li>
+            <li>Reunir num só lugar, ligado à matrícula, as informações hoje espalhadas em vários sistemas e planilhas.</li>
+            <li>Permitir que o servidor consulte a própria ficha e localize seus documentos com rapidez.</li>
+            <li>Apoiar o planejamento do RH: indicadores, previsão de aposentadorias, alerta de risco por unidade e busca de talentos.</li>
             <li>Garantir a rastreabilidade dos acessos, como exige a LGPD, e identificar documentos que faltam no acervo.</li>
           </ul>
           <p>Base legal: execução de políticas públicas e cumprimento de obrigação legal pela administração pública (LGPD, art. 7º, II e III, e art. 23).</p>
@@ -52,17 +55,26 @@ export default function Privacidade() {
 
         <Secao titulo="Quem pode acessar">
           <ul>
-            <li><strong>Servidor</strong>: os próprios documentos e os documentos de nível “público interno”.</li>
-            <li><strong>Gestor</strong>: os documentos dos servidores da sua unidade.</li>
-            <li><strong>Administrador do RH</strong>: todo o acervo, os registros de acesso e o cadastro de usuários.</li>
+            <li><strong>Servidor</strong>: só a própria ficha; envia atualizações para aprovação. Vê também os próprios documentos e os de nível “público interno”.</li>
+            <li><strong>Gestor de unidade</strong>: só as fichas e os documentos dos servidores da sua unidade; aprova as atualizações da unidade (nunca o próprio pedido).</li>
+            <li><strong>RH / administrador</strong>: vê e edita tudo, incluindo os registros de acesso e o cadastro de usuários.</li>
             <li>Documentos <strong>sigilosos</strong> nunca aparecem no totem; só são acessados no painel administrativo por perfis autorizados.</li>
           </ul>
           <p>As mesmas regras são aplicadas no servidor de dados, e não apenas na tela.</p>
         </Secao>
 
+        <Secao titulo="LGPD visível">
+          <ul>
+            <li>Cada acesso a uma ficha fica registrado (quem, quando e de onde), e o RH vê esse histórico na própria ficha.</li>
+            <li>Relatórios e indicadores agregados <strong>não mostram grupos com menos de 5 pessoas</strong>, para que ninguém possa ser identificado.</li>
+            <li>Previsões de aposentadoria são estimativas por regra simplificada e não substituem a análise oficial do RH.</li>
+          </ul>
+        </Secao>
+
         <Secao titulo="Segurança no totem">
           <ul>
-            <li>A sessão é encerrada automaticamente após 1 minuto sem uso.</li>
+            <li>O totem fica em área interna e exige login com matrícula e senha.</li>
+            <li>A sessão é encerrada automaticamente após 2 minutos sem uso.</li>
             <li>Após 5 tentativas de senha incorretas, o acesso é bloqueado por 30 segundos.</li>
             <li>Os registros de acesso não podem ser alterados nem apagados.</li>
           </ul>

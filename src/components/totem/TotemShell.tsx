@@ -1,15 +1,17 @@
+import { TOTEM_AVISO_SEGUNDOS, TOTEM_INATIVIDADE_SEGUNDOS } from '../../config/regrasRH'
 import { Hand } from 'lucide-react'
 import { useCallback } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
 import { useInatividade } from '../../hooks/useInatividade'
 
-export const LIMITE_INATIVIDADE_S = 60
-export const AVISO_INATIVIDADE_S = 10
+// Tempos configuráveis em src/config/regrasRH.ts (proposta: saída automática após 1 a 2 minutos).
+export const LIMITE_INATIVIDADE_S = TOTEM_INATIVIDADE_SEGUNDOS
+export const AVISO_INATIVIDADE_S = TOTEM_AVISO_SEGUNDOS
 
 /**
- * Envolve todas as telas do totem. Após 60 s sem interação encerra a sessão e volta à
- * tela de descanso; nos últimos 10 s mostra a contagem regressiva.
+ * Envolve todas as telas do totem. Após 2 minutos sem interação encerra a sessão e volta à
+ * tela de descanso; nos últimos 15 s mostra a contagem regressiva.
  */
 export function TotemShell() {
   const { usuario, sair } = useAuth()
@@ -42,7 +44,7 @@ export function TotemShell() {
             <p className="my-6 text-8xl font-extrabold tabular-nums text-marinho-800" aria-live="assertive">
               {restante}
             </p>
-            <p className="mb-8 text-xl text-marinho-700">Por segurança, o totem encerra a sessão após 1 minuto sem uso.</p>
+            <p className="mb-8 text-xl text-marinho-700">Por segurança, o totem encerra a sessão após {LIMITE_INATIVIDADE_S / 60} minutos sem uso.</p>
             <button type="button" onClick={reiniciar}
               className="flex min-h-20 w-full items-center justify-center gap-3 rounded-2xl bg-destaque-500 text-2xl font-bold text-marinho-950 active:bg-destaque-400">
               <Hand className="size-8" aria-hidden /> Continuar usando

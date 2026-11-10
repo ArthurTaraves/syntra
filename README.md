@@ -1,83 +1,109 @@
 # SYNTRA
 
 **Sistema de Navegação, Tecnologia e Recuperação de Arquivos**
-Protótipo acadêmico · Superintendência da Polícia Rodoviária Federal no Piauí (PRF-PI) · Gestão de Pessoas
+Protótipo acadêmico · Superintendência Regional da Polícia Rodoviária Federal no Piauí (PRF-PI) · Gestão de Pessoas
 
-> ⚠️ **Todos os dados do protótipo são fictícios.** Nomes, matrículas, CPFs e números de processo foram inventados.
+> ⚠️ **Todos os dados do protótipo são fictícios.** Nomes, matrículas, CPFs, datas e números de processo foram inventados.
+>
+> 📄 A especificação oficial está em [`docs/PROPOSTA.md`](docs/PROPOSTA.md).
 
 ---
 
 ## Objetivo
 
-Centralizar e agilizar a consulta a documentos e processos funcionais dos servidores da PRF-PI, por meio de um **totem de consulta documental** (tela touch em modo quiosque) e de um **painel administrativo do RH**, com controle de acesso por perfil e registro de acessos conforme a LGPD.
+Ser um **sistema único de gestão de pessoas e documentos**, em que tudo fica ligado à matrícula do servidor, como um prontuário. Funciona no computador e num **totem de consulta** (tela touch em ponto fixo da unidade), com controle de acesso por perfil e LGPD aplicada também no back-end.
 
 ## Problema
 
-Os documentos e informações dos servidores estão **fragmentados** em pastas físicas, planilhas e sistemas diferentes. Na prática:
+A demanda oficial: **“Fragmentação de Informações e Falta de Sistema Integrado na Gestão de Pessoas da PRF”**.
 
-- servidores perdem tempo procurando documentos antigos e processos arquivados;
-- o RH é acionado para localizar papéis que poderiam ser consultados diretamente;
-- há **retrabalho** e **duplicidade** de documentos;
-- não há registro de quem consultou o quê.
+- Para ter as informações completas de um servidor, hoje é preciso acessar **9 sistemas ou sites diferentes**, além de planilhas locais sem padrão.
+- Tempo de serviço, lotação, competências, capacitações e previsão de aposentadoria são **cruzados manualmente**.
+- Não existe **banco de talentos** nem forma unificada de identificar perfis para movimentações, capacitações e lideranças.
+- Resultado: retrabalho, dados inconsistentes e demora para atender a gestão.
 
 ## Funcionalidades
 
-### Totem de consulta (`/totem`)
-- Tela de descanso com data e hora e botão **“Toque para começar”** (entra em tela cheia).
-- Login por **matrícula de 4 dígitos** e senha. Em tela de toque, usa um **teclado virtual próprio** (numérico e alfanumérico); no computador, aceita o teclado físico (Enter avança, Tab funciona).
-- **Bloqueio de 30 segundos após 5 tentativas erradas** seguidas.
-- Menu com 4 opções: **nº de processo**, **matrícula ou nome do servidor**, **meus documentos** e **busca avançada** (tipo, período, status, lotação).
-- Busca tolerante: ignora acentos e maiúsculas e aceita nº de processo **com ou sem pontuação**.
-- Resultados em cards com a **localização física em destaque** (ex.: “Arquivo Central – Caixa 14 – Prateleira B”).
-- Detalhe do documento com todos os metadados, **linha do tempo do processo** e “Visualizar arquivo”.
-- **Logout automático após 60 s sem interação**, com contagem regressiva nos últimos 10 s. Botão **Sair** sempre visível.
-- Documentos **sigilosos nunca aparecem no totem**.
-- Interface pensada para monitor touch na **vertical (1080×1920) e na horizontal (1920×1080)**: botões de no mínimo 64 px e fontes grandes.
+### Ficha do servidor (5 blocos)
+1. **Dados básicos**: nome, matrícula, cargo, situação e e-mail institucional. O CPF aparece sempre mascarado.
+2. **Lotação e movimentações**: unidade atual e histórico de transferências.
+3. **Tempo de serviço e aposentadoria**: ingresso, tempo de casa (com tempo averbado) e **previsão de aposentadoria**, sempre com aviso de estimativa.
+4. **Cursos e capacitações**: com o **certificado anexado** no acervo, quando houver.
+5. **Perfil e talentos**: competências (as **raras** ficam destacadas) e indicações (liderança, instrutoria…).
 
-### Painel administrativo (`/admin`)
-| Aba | Gestor | Admin |
+Toda ficha mostra **“Ficha atualizada há X meses”**, em amarelo quando passa de 12 meses.
+
+### Painel de indicadores e diferenciais
+- **Indicadores**: servidores por unidade, **próximos da aposentadoria (5 anos)** por unidade e por prazo, e capacitações por área.
+- **Alerta de risco por unidade** (verde, amarelo ou vermelho): cruza as aposentadorias previstas com as competências e mostra as unidades que podem perder pessoas ou **competências raras**.
+- **Busca de talentos com filtros combinados**: curso ou competência, tempo de casa, unidade e indicação. Exemplo: “Instrutor de tiro + mais de 10 anos + Superintendência”.
+- **Autoatendimento**: o servidor envia um curso ou documento pela própria ficha (totem ou computador). O pedido fica **pendente** até o gestor da unidade ou o RH aprovar ou recusar (recusa exige motivo). Ao aprovar, a ficha é atualizada e a data muda.
+- **LGPD visível**: o RH vê, na própria ficha, **quem a acessou e quando**. Os indicadores agregados **não mostram grupos com menos de 5 pessoas** (“dados insuficientes para preservar a privacidade”).
+
+### Regras configuráveis
+Tudo fica num único arquivo, [`src/config/regrasRH.ts`](src/config/regrasRH.ts):
+- a regra simplificada de aposentadoria (hoje ilustrativa: **55 anos de idade + 30 de serviço**; a regra exata seria definida pelo RH da PRF);
+- o horizonte do alerta;
+- o critério de competência rara e os limites de cor;
+- o grupo mínimo para os relatórios;
+- o tempo de saída do totem.
+
+### Totem de consulta (`/totem`)
+- Tela de descanso com data e hora, botão **“Toque para começar”** e link discreto **“Acesso do RH (painel)”**.
+- Login obrigatório, com **matrícula de 4 dígitos** e senha.
+  - Na tela de toque, usa um teclado virtual próprio.
+  - No computador, aceita o teclado físico.
+- **Bloqueio de 30 s após 5 tentativas erradas.**
+- **Minha ficha**: os 5 blocos, o envio de atualizações e o acompanhamento das próprias solicitações.
+- Busca de documentos por processo, matrícula ou nome, “meus documentos” e busca avançada, com a **localização física em destaque**.
+- **Saída automática após 2 minutos sem uso**, com contagem regressiva nos últimos 15 s. O botão **Sair** fica sempre visível.
+- O cabeçalho mostra o nome e o perfil. Documentos **sigilosos nunca aparecem no totem**.
+
+### Painel (`/admin`): gestor de unidade e RH
+| Aba | Gestor | RH |
 |---|:-:|:-:|
-| **Início**: totais, arquivados, em tramitação, cadastrados no mês, consultas no totem na semana | ✔ (sua unidade) | ✔ |
-| **Documentos**: busca, filtros e paginação | ✔ | ✔ |
-| Cadastrar, editar e arquivar documento (com validação, máscara de processo e **aviso de duplicidade**) | – | ✔ |
-| **Servidores**: lista e **pasta funcional digital** (todos os documentos e processos do servidor) | ✔ | ✔ |
-| **Processos**: lista, linha do tempo de tramitação e nova movimentação | ✔ | ✔ |
-| **Relatórios**: gráficos, filtros por período e lotação, **Exportar PDF** | ✔ | ✔ |
-| **Logs de acesso**: filtros e **exportação CSV** | – | ✔ |
-| **Usuários**: listar, criar e alterar perfil | – | ✔ |
+| **Indicadores e alertas** | ✔ (sua unidade) | ✔ |
+| **Busca de talentos** | ✔ (sua unidade) | ✔ |
+| **Fichas dos servidores** (5 blocos, documentos, processos) | ✔ (sua unidade) | ✔ |
+| **“Quem acessou esta ficha”** | – | ✔ |
+| **Solicitações** (aprovar/recusar autoatendimento) | ✔ (sua unidade, nunca o próprio pedido) | ✔ |
+| **Documentos**: busca e filtros | ✔ | ✔ |
+| Cadastrar, editar e arquivar documento | – | ✔ |
+| **Processos**: linha do tempo e movimentação | ✔ | ✔ |
+| **Relatórios do acervo** (Exportar PDF) | ✔ | ✔ |
+| **Logs de acesso** (exportação CSV) e **Usuários** | – | ✔ |
 
 ### Segurança e LGPD
-- **Toda consulta, visualização, download e edição gera um registro de acesso** (`LogAcesso`), com origem *totem* ou *painel*, inclusive as **buscas sem resultado**.
-- Regras de acesso aplicadas **também no servidor** (`firestore.rules`), não só na tela.
-- Logs só podem ser **criados**: nunca editados nem apagados. Só o admin lê.
-- **CPF sempre mascarado** (`***.456.789-**`); o CPF completo nunca é armazenado.
-- Página `/privacidade` explica quais dados são tratados, para quê e quem acessa.
+- **Toda consulta, visualização, download e edição gera um registro de acesso** (`LogAcesso`), inclusive as buscas sem resultado e as buscas de talentos.
+- As regras de acesso valem **também no servidor** (`firestore.rules`): fichas por perfil e unidade, pedidos de autoatendimento criados só em nome próprio e aprovação conferida no mesmo lote de gravação.
+- Logs só podem ser **criados**, nunca editados nem apagados. Só o RH lê.
+- O **CPF fica sempre mascarado**. A página `/privacidade` explica quais dados são tratados, para quê e quem acessa.
 
 ## Perfis de acesso
 
-| Perfil | O que vê | Onde |
+| Perfil | O que vê e faz |
+|---|---|
+| **Servidor** | Só a **própria ficha**; envia atualizações para aprovação. Vê também os próprios documentos e os de nível público interno, nunca os sigilosos. Usa o totem (ou o totem no navegador do computador). |
+| **Gestor de unidade** | Só os servidores da **própria unidade**; **aprova atualizações** da unidade (nunca o próprio pedido). Totem e painel. |
+| **RH / administrador** | **Vê e edita tudo**, incluindo logs, usuários e cadastro de documentos. Totem e painel. |
+
+## Contas de demonstração
+
+Senha de todas: **`syntra123`**. Todas se chamam “Camila”; o perfil aparece ao lado do nome no cabeçalho.
+
+| Matrícula | Perfil | Unidade |
 |---|---|---|
-| **Servidor** | Os **próprios** documentos e os de nível **público interno**. Nunca os sigilosos. | Totem |
-| **Gestor** | Os documentos dos servidores da **sua unidade** (lotação). | Totem e painel |
-| **Admin** | **Tudo**, incluindo logs e usuários. Cadastra, edita e arquiva. | Totem e painel |
+| **1001** | Servidor | Delegacia de Teresina |
+| **1002** | Gestor de unidade | Delegacia de Parnaíba |
+| **1003** | RH / administrador | Superintendência – Teresina |
 
-Níveis de acesso dos documentos: `publico-interno`, `restrito` e `sigiloso` (este nunca é exibido no totem).
+**Matrículas têm exatamente 4 dígitos**: os demais servidores fictícios vão de 1004 a 1030. Uma matrícula com outro tamanho mostra “A matrícula tem 4 dígitos” e não conta como tentativa errada.
 
-## Conta de demonstração
-
-A demonstração usa **uma única conta, com acesso total**:
-
-| Matrícula | Senha | Nome (fictício) | Acesso |
-|---|---|---|---|
-| **1001** | **`syntra123`** | Camila | Total (perfil administrador): totem **e** painel `/admin` |
-
-- No **totem**, o cabeçalho mostra só o nome (“Camila”). Como o perfil é de administrador, o totem continua **sem exibir documentos sigilosos**.
-- O **painel do RH** pode ser aberto pelo link discreto **“Acesso do RH (painel)”** no rodapé da tela inicial do totem, ou direto em `/admin`.
-- Os perfis **servidor** e **gestor** continuam implementados no código e em `firestore.rules`, prontos para a implantação real. Só não há contas de demonstração para eles.
-
-**Todas as matrículas do sistema têm exatamente 4 dígitos**: a conta usa 1001 e os demais servidores fictícios vão de 1002 a 1030. Uma matrícula digitada com outro tamanho mostra “A matrícula tem 4 dígitos” e **não conta** como tentativa errada para o bloqueio.
-
-O acervo fictício tem **30 servidores, 120 documentos e 40 processos** em 6 lotações do Piauí, além de cerca de 380 registros de acesso de exemplo dos últimos 30 dias, que alimentam os relatórios.
+O acervo fictício tem **30 servidores, 120 documentos, 40 processos e 6 solicitações** em 6 lotações do Piauí, além de registros de acesso de exemplo dos últimos 30 dias. O cenário foi montado para a demonstração:
+- **Delegacia de Parnaíba** (a da gestora 1002) e **Corrente** em **vermelho**: perdem competências raras com aposentadorias previstas.
+- **Superintendência** e **Picos** em **amarelo**.
+- **Teresina** e **Floriano** em **verde**.
+- Parnaíba tem pedidos de autoatendimento pendentes para a gestora aprovar.
 
 ## Como rodar
 
@@ -162,7 +188,7 @@ Detalhes e o mapeamento de cada operação para a Graph API: [`src/services/shar
 | ODS | Meta | Como o SYNTRA contribui |
 |---|---|---|
 | **ODS 16** – Paz, justiça e instituições eficazes | **16.6** Desenvolver instituições eficazes, responsáveis e transparentes | Reduz o tempo de localização de documentos, elimina duplicidade e registra cada acesso (auditoria). |
-| | **16.7** Garantir a tomada de decisão responsiva, inclusiva, participativa e representativa | O próprio servidor consulta sua pasta funcional pelo totem, e os relatórios (como as buscas sem resultado) orientam decisões do RH. |
+| | **16.7** Garantir a tomada de decisão responsiva, inclusiva, participativa e representativa | O próprio servidor consulta e atualiza a sua ficha (autoatendimento com aprovação), e os indicadores, alertas e buscas sem resultado orientam decisões do RH. |
 | **ODS 9** – Indústria, inovação e infraestrutura | **9.1** Desenvolver infraestrutura de qualidade, confiável, sustentável e resiliente | Infraestrutura digital acessível (totem touch + web), integrada ao ambiente Microsoft 365 já existente na instituição. |
 | **ODS 8** – Trabalho decente e crescimento econômico | **8.2** Atingir níveis mais elevados de produtividade por meio da diversificação, modernização tecnológica e inovação | Libera os servidores do RH de buscas manuais repetitivas e reduz o tempo improdutivo de todos os servidores. |
 
@@ -178,6 +204,8 @@ Detalhes e o mapeamento de cada operação para a Graph API: [`src/services/shar
 | Treinamento da equipe de RH e material de divulgação | R$ 200 – R$ 1.500 |
 | Software: SharePoint / Microsoft 365 | R$ 0 (licenças institucionais já existentes) |
 | Hospedagem do protótipo (Vercel + Firebase, planos gratuitos) | R$ 0 |
+
+**Custo mensal de operação: praticamente zero** (planos gratuitos do Firebase e da Vercel).
 
 O desenvolvimento do protótipo foi realizado no âmbito acadêmico. Na implantação, o principal custo é o equipamento do totem.
 
