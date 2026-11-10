@@ -44,6 +44,15 @@ React + Vite + TypeScript + TailwindCSS (v4, via `@tailwindcss/vite`) + React Ro
 - **Modo totem**: fontes grandes, botões com no mínimo 64px de altura, alvos de toque generosos, sem depender de hover.
 - **Painel administrativo**: layout de desktop com menu lateral.
 
+## Publicação (produção)
+- **Site publicado:** https://syntra-prf-pi.vercel.app (totem em `/totem`, painel em `/admin`).
+- **Deploy automático:** o projeto foi importado na Vercel a partir do repositório GitHub `ArthurTaraves/syntra`. **Todo `git push` na `main` publica sozinho.**
+  - **Não** rodar `vercel deploy`, `vercel link` nem criar outro projeto na Vercel.
+- **Modo demonstração em produção:** não há variáveis do Firebase cadastradas na Vercel, então o site publicado usa o provedor `local` (dados fictícios no navegador de cada visitante).
+  - Para passar a usar o Firebase em produção: cadastrar as variáveis `VITE_FIREBASE_*` na Vercel, publicar regras/índices, rodar `npm run seed` e autorizar `syntra-prf-pi.vercel.app` em Firebase Authentication → Domínios autorizados.
+- O `.env` local também está com `VITE_DATA_PROVIDER=local`, para o `npm run dev` se comportar igual à produção.
+- Repositório: https://github.com/ArthurTaraves/syntra (branch padrão `main`).
+
 ## Comandos
 - `npm run dev` — servidor de desenvolvimento
 - `npm run build` — checagem de tipos + build de produção
