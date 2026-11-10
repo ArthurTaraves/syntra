@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Documento digitalizado (exemplo)</title>
+  <style>
+    body { margin: 0; background: #e5e7eb; font-family: Georgia, 'Times New Roman', serif; color: #111; }
+    .folha { max-width: 720px; margin: 24px auto; background: #fff; padding: 56px 64px; box-shadow: 0 2px 12px rgba(0,0,0,.15); position: relative; overflow: hidden; }
+    .marca { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font: 700 64px system-ui, sans-serif; color: rgba(200,0,0,.08); transform: rotate(-30deg); pointer-events: none; }
+    h1 { font-size: 18px; text-align: center; text-transform: uppercase; letter-spacing: .05em; }
+    p { line-height: 1.7; text-align: justify; }
+    .cab { text-align: center; font: 13px system-ui, sans-serif; color: #444; border-bottom: 1px solid #ccc; padding-bottom: 12px; margin-bottom: 24px; }
+    .rodape { margin-top: 48px; font: 12px system-ui, sans-serif; color: #666; text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="folha">
+    <div class="marca">DOCUMENTO FICTÍCIO</div>
+    <div class="cab">MINISTÉRIO DA JUSTIÇA E SEGURANÇA PÚBLICA<br />SUPERINTENDÊNCIA DA POLÍCIA RODOVIÁRIA FEDERAL NO PIAUÍ<br />Gestão de Pessoas</div>
+    <h1>Documento de exemplo</h1>
+    <p>Este arquivo simula a versão digitalizada de um documento funcional no protótipo acadêmico <strong>SYNTRA</strong>. Na implantação real, aqui seria exibido o PDF armazenado na biblioteca de documentos do SharePoint institucional.</p>
+    <p>Identificador do registro: <strong id="ident">—</strong>.</p>
+    <p>Todas as informações apresentadas no sistema — nomes, matrículas, CPFs e números de processo — são fictícias e foram geradas apenas para demonstração.</p>
+    <div class="rodape">SYNTRA · Sistema de Navegação, Tecnologia e Recuperação de Arquivos · Protótipo</div>
+  </div>
+  <script>
+    document.getElementById('ident').textContent = new URLSearchParams(location.search).get('id') || '—'
+  </script>
+</body>
+</html>

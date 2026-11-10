@@ -1,0 +1,30 @@
+@import 'tailwindcss';
+
+/* Identidade visual SYNTRA — PRF-PI */
+@theme {
+  --color-marinho-950: #06142e;
+  --color-marinho-900: #0a1f44;
+  --color-marinho-800: #102a5c;
+  --color-marinho-700: #17387a;
+  --color-marinho-600: #1f4a9c;
+  --color-marinho-100: #dde6f5;
+  --color-marinho-50: #eef3fb;
+
+  --color-destaque-500: #f5c400;
+  --color-destaque-400: #ffd426;
+  --color-destaque-100: #fff6cc;
+
+  --color-fundo: #f5f7fb;
+
+  --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  @apply bg-fundo text-marinho-950 antialiased;
+}

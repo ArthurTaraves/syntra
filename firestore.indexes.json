@@ -1,0 +1,95 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "documentos",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "lotacao", "order": "ASCENDING" },
+        { "fieldPath": "nivelAcesso", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "documentos",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "lotacao", "order": "ASCENDING" },
+        { "fieldPath": "matriculaServidor", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "documentos",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "matriculaServidor", "order": "ASCENDING" },
+        { "fieldPath": "nivelAcesso", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "documentos",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "nivelAcesso", "order": "ASCENDING" },
+        { "fieldPath": "numeroProcesso", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "documentos",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "numeroProcesso", "order": "ASCENDING" },
+        { "fieldPath": "tipo", "order": "ASCENDING" },
+        { "fieldPath": "matriculaServidor", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "processos",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "numeroProcesso", "order": "ASCENDING" },
+        { "fieldPath": "lotacao", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "processos",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "numeroProcesso", "order": "ASCENDING" },
+        { "fieldPath": "matriculaServidor", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "servidores",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "matricula", "order": "ASCENDING" },
+        { "fieldPath": "lotacao", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "logs",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "origem", "order": "ASCENDING" },
+        { "fieldPath": "data", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "logs",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "acao", "order": "ASCENDING" },
+        { "fieldPath": "data", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "logs",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "acao", "order": "ASCENDING" },
+        { "fieldPath": "origem", "order": "ASCENDING" },
+        { "fieldPath": "data", "order": "DESCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

@@ -1,0 +1,111 @@
+// Ponto de entrada da camada de dados. As telas importam SOMENTE daqui.
+//
+// 1) Escolhe o provedor: Firebase (quando o .env está configurado) ou local (demonstração).
+//    No futuro, basta acrescentar o provedor SharePoint/Microsoft Graph (ver sharepoint/README.md).
+// 2) Envolve o provedor com o registro automático de LogAcesso (LGPD): toda consulta,
+//    visualização e edição gera log, sem depender de cada tela lembrar de registrar.
+
+import type { NovoLog, Usuario } from '../types'
+import { criarProviderFirebase } from './firebase'
+import { firebaseConfigurado } from './firebase/app'
+import { descreverFiltros } from './filtros'
+import { criarProviderLocal } from './local'
+import type { Contexto, DataProvider } from './tipos'
+
+function comRegistroDeAcessos(p: DataProvider): DataProvider {
+  const registrar = (usuario: Usuario, log: NovoLog) =>
+    p.logs.registrar(log, usuario).catch((e) => console.warn('Falha ao registrar log de acesso', e))
+  const log = (ctx: Contexto, log: NovoLog) => registrar(ctx.usuario, log)
+
+  return {
+    ...p,
+    auth: {
+      ...p.auth,
+      async entrar(matricula, senha, origem) {
+        const u = await p.auth.entrar(matricula, senha, origem)
+        await registrar(u, { acao: 'login', alvo: u.uid, origem })
+        return u
+      },
+      async sair(ctx) {
+        // Registra ANTES de sair: depois do logout não há mais permissão para gravar.
+        if (ctx) await log(ctx, { acao: 'logout', alvo: ctx.usuario.uid, origem: ctx.origem })
+        await p.auth.sair(ctx)
+      },
+    },
+    documentos: {
+      ...p.documentos,
+      async buscar(filtros, ctx, opcoes) {
+        const r = await p.documentos.buscar(filtros, ctx, opcoes)
+        if (opcoes?.registrar !== false)
+          void log(ctx, { acao: 'consulta', alvo: descreverFiltros(filtros), resultados: r.length, origem: ctx.origem })
+        return r
+      },
+      async obterPorId(id, ctx) {
+        const d = await p.documentos.obterPorId(id, ctx)
+        if (d) void log(ctx, { acao: 'visualizacao', alvo: d.id, detalhe: d.titulo, origem: ctx.origem })
+        return d
+      },
+      async criar(dados, ctx) {
+        const d = await p.documentos.criar(dados, ctx)
+        void log(ctx, { acao: 'edicao', alvo: d.id, detalhe: `Cadastro: ${d.titulo}`, origem: ctx.origem })
+        return d
+      },
+      async atualizar(id, dados, ctx) {
+        const d = await p.documentos.atualizar(id, dados, ctx)
+        void log(ctx, { acao: 'edicao', alvo: d.id, detalhe: `Alteração: ${d.titulo}`, origem: ctx.origem })
+        return d
+      },
+      async arquivar(id, local, ctx) {
+        const d = await p.documentos.arquivar(id, local, ctx)
+        void log(ctx, { acao: 'edicao', alvo: d.id, detalhe: `Arquivamento: ${d.titulo}`, origem: ctx.origem })
+        return d
+      },
+    },
+    servidores: {
+      ...p.servidores,
+      async obterPorMatricula(matricula, ctx) {
+        const s = await p.servidores.obterPorMatricula(matricula, ctx)
+        if (s) void log(ctx, { acao: 'visualizacao', alvo: s.id, detalhe: `Pasta funcional: ${s.nome}`, origem: ctx.origem })
+        return s
+      },
+    },
+    processos: {
+      ...p.processos,
+      async obterPorId(id, ctx) {
+        const pr = await p.processos.obterPorId(id, ctx)
+        if (pr) void log(ctx, { acao: 'visualizacao', alvo: pr.id, detalhe: `Processo ${pr.numeroProcesso}`, origem: ctx.origem })
+        return pr
+      },
+      async adicionarMovimentacao(id, mov, situacao, ctx) {
+        const pr = await p.processos.adicionarMovimentacao(id, mov, situacao, ctx)
+        void log(ctx, { acao: 'edicao', alvo: pr.id, detalhe: `Movimentação: ${mov.descricao}`, origem: ctx.origem })
+        return pr
+      },
+    },
+    usuarios: {
+      ...p.usuarios,
+      async criar(dados, ctx) {
+        const u = await p.usuarios.criar(dados, ctx)
+        void log(ctx, { acao: 'edicao', alvo: u.uid, detalhe: `Usuário criado: ${u.nome} (${u.perfil})`, origem: ctx.origem })
+        return u
+      },
+      async alterarPerfil(uid, perfil, ctx) {
+        await p.usuarios.alterarPerfil(uid, perfil, ctx)
+        void log(ctx, { acao: 'edicao', alvo: uid, detalhe: `Perfil alterado para ${perfil}`, origem: ctx.origem })
+      },
+    },
+  }
+}
+
+const escolha = import.meta.env.VITE_DATA_PROVIDER || (firebaseConfigurado ? 'firebase' : 'local')
+
+export const servicos: DataProvider = comRegistroDeAcessos(
+  escolha === 'firebase' ? criarProviderFirebase() : criarProviderLocal(),
+)
+
+export const modoDemonstracao = servicos.nome === 'local'
+
+export { restaurarDadosDemonstracao } from './local'
+export { aplicarFiltros, descreverFiltros } from './filtros'
+export * from './permissoes'
+export * from './tipos'
