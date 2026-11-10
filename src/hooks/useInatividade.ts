@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-const EVENTOS = ['pointerdown', 'keydown', 'touchstart', 'wheel', 'scroll'] as const
+// Teclado físico: "keydown" (qualquer tecla) e "input" (colar, preenchimento automático)
+// também contam como interação.
+const EVENTOS = ['pointerdown', 'keydown', 'input', 'touchstart', 'wheel', 'scroll'] as const
 
 /**
  * Detecta inatividade. Retorna os segundos restantes quando faltam `avisoSegundos` ou menos
