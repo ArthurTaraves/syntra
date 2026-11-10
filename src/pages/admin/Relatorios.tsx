@@ -78,8 +78,8 @@ export default function Relatorios() {
     })
 
     const vis = new Map<string, { titulo: string; total: number }>()
-    // Visualizações de documento (exclui as de pasta funcional e de processo).
-    const ehDocumento = (d?: string) => !d?.startsWith('Pasta funcional:') && !d?.startsWith('Processo ')
+    // Visualizações de documento (exclui as de ficha do servidor e de processo).
+    const ehDocumento = (d?: string) => !d?.startsWith('Ficha:') && !d?.startsWith('Pasta funcional:') && !d?.startsWith('Processo ')
     logs.filter((l) => l.acao === 'visualizacao' && ehDocumento(l.detalhe))
       .forEach((l) => {
         const v = vis.get(l.alvo) ?? { titulo: l.detalhe ?? l.alvo, total: 0 }

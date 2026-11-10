@@ -12,7 +12,9 @@ import Descanso from './pages/totem/Descanso'
 import DetalheDocumento from './pages/totem/DetalheDocumento'
 import LoginTotem from './pages/totem/LoginTotem'
 import MenuTotem from './pages/totem/MenuTotem'
+import EnviarAtualizacao from './pages/totem/EnviarAtualizacao'
 import MeusDocumentos from './pages/totem/MeusDocumentos'
+import MinhaFicha from './pages/totem/MinhaFicha'
 
 // O painel (e o recharts) só é baixado quando alguém abre /admin: o totem fica leve.
 const PainelLayout = lazy(() => import('./components/painel/PainelLayout').then((m) => ({ default: m.PainelLayout })))
@@ -27,6 +29,7 @@ const DetalheProcesso = lazy(() => import('./pages/admin/DetalheProcesso'))
 const Relatorios = lazy(() => import('./pages/admin/Relatorios'))
 const Logs = lazy(() => import('./pages/admin/Logs'))
 const Usuarios = lazy(() => import('./pages/admin/Usuarios'))
+const Solicitacoes = lazy(() => import('./pages/admin/Solicitacoes'))
 const Privacidade = lazy(() => import('./pages/Privacidade'))
 const NaoEncontrada = lazy(() => import('./pages/NaoEncontrada'))
 
@@ -48,6 +51,8 @@ export default function App() {
                 <Route path="busca/servidor" element={<BuscaServidor />} />
                 <Route path="busca/avancada" element={<BuscaAvancada />} />
                 <Route path="meus-documentos" element={<MeusDocumentos />} />
+                <Route path="minha-ficha" element={<MinhaFicha />} />
+                <Route path="minha-ficha/enviar" element={<EnviarAtualizacao />} />
                 <Route path="documento/:id" element={<DetalheDocumento />} />
               </Route>
             </Route>
@@ -64,6 +69,7 @@ export default function App() {
               <Route path="processos" element={<Processos />} />
               <Route path="processos/:id" element={<DetalheProcesso />} />
               <Route path="relatorios" element={<Relatorios />} />
+              <Route path="solicitacoes" element={<Solicitacoes />} />
               <Route path="logs" element={<RotaProtegida login="/admin/login" perfis={['admin']}><Logs /></RotaProtegida>} />
               <Route path="usuarios" element={<RotaProtegida login="/admin/login" perfis={['admin']}><Usuarios /></RotaProtegida>} />
             </Route>

@@ -2,6 +2,7 @@ import {
   BarChart3,
   FileText,
   FolderKanban,
+  Inbox,
   LayoutDashboard,
   LogOut,
   Menu,
@@ -13,17 +14,18 @@ import {
   X,
   type LucideIcon,
 } from 'lucide-react'
-import { useState } from 'react'
-import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
-import { modoDemonstracao, restaurarDadosDemonstracao, ROTULO_PERFIL } from '../../services'
+import { modoDemonstracao, podeDecidirSolicitacao, restaurarDadosDemonstracao, ROTULO_PERFIL, servicos } from '../../services'
 import type { Perfil } from '../../types'
 import { Logo } from '../Logo'
 
 const ITENS: { para: string; rotulo: string; Icone: LucideIcon; perfis: Perfil[] }[] = [
   { para: '/admin', rotulo: 'Início', Icone: LayoutDashboard, perfis: ['gestor', 'admin'] },
   { para: '/admin/documentos', rotulo: 'Documentos', Icone: FileText, perfis: ['gestor', 'admin'] },
-  { para: '/admin/servidores', rotulo: 'Servidores', Icone: Users, perfis: ['gestor', 'admin'] },
+  { para: '/admin/servidores', rotulo: 'Fichas dos servidores', Icone: Users, perfis: ['gestor', 'admin'] },
+  { para: '/admin/solicitacoes', rotulo: 'Solicitações', Icone: Inbox, perfis: ['gestor', 'admin'] },
   { para: '/admin/processos', rotulo: 'Processos', Icone: FolderKanban, perfis: ['gestor', 'admin'] },
   { para: '/admin/relatorios', rotulo: 'Relatórios', Icone: BarChart3, perfis: ['gestor', 'admin'] },
   { para: '/admin/logs', rotulo: 'Logs de acesso', Icone: ScrollText, perfis: ['admin'] },
@@ -34,6 +36,20 @@ export function PainelLayout() {
   const { usuario, sair } = useAuth()
   const navigate = useNavigate()
   const [menuAberto, setMenuAberto] = useState(false)
+  const { pathname } = useLocation()
+  // Quantos pedidos de autoatendimento esperam decisão (atualiza ao trocar de tela).
+  const [pendentes, setPendentes] = useState(0)
+  useEffect(() => {
+    if (!usuario) return
+    let ativo = true
+    servicos.solicitacoes
+      .listar({ status: 'pendente' }, { usuario, origem: 'painel' })
+      .then((l) => ativo && setPendentes(l.filter((s) => podeDecidirSolicitacao(usuario, s)).length))
+      .catch(() => undefined)
+    return () => {
+      ativo = false
+    }
+  }, [usuario, pathname])
   if (!usuario) return null
 
   const encerrar = async () => {
@@ -69,6 +85,9 @@ export function PainelLayout() {
                 }`
               }>
               <Icone className="size-5" aria-hidden /> {rotulo}
+              {para === '/admin/solicitacoes' && pendentes > 0 && (
+                <span className="ml-auto rounded-full bg-amber-400 px-2 text-xs font-bold text-marinho-950" aria-label={`${pendentes} pendentes`}>{pendentes}</span>
+              )}
             </NavLink>
           ))}
           <Link to="/totem" className="mt-4 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-marinho-100 hover:bg-marinho-800">

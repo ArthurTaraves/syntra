@@ -1,8 +1,9 @@
-import { FolderOpen, Hash, SlidersHorizontal, UserSearch, type LucideIcon } from 'lucide-react'
+import { FolderOpen, Hash, IdCard, SlidersHorizontal, UserSearch, type LucideIcon } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
 
 const OPCOES: { para: string; titulo: string; descricao: string; Icone: LucideIcon }[] = [
+  { para: '/totem/minha-ficha', titulo: 'Minha ficha', descricao: 'Seus dados, lotação, aposentadoria, cursos e talentos. Envie atualizações.', Icone: IdCard },
   { para: '/totem/busca/processo', titulo: 'Buscar por nº de processo', descricao: 'Digite o número do processo SEI, com ou sem pontuação.', Icone: Hash },
   { para: '/totem/busca/servidor', titulo: 'Buscar por matrícula ou nome', descricao: 'Encontre documentos pelo servidor.', Icone: UserSearch },
   { para: '/totem/meus-documentos', titulo: 'Meus documentos', descricao: 'Tudo o que está na sua pasta funcional.', Icone: FolderOpen },

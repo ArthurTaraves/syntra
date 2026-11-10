@@ -32,7 +32,7 @@ export default function Servidores() {
 
   return (
     <>
-      <CabecalhoPagina titulo="Servidores" descricao="Abra a ficha para ver a pasta funcional digital: todos os documentos e processos do servidor." />
+      <CabecalhoPagina titulo="Fichas dos servidores" descricao="Abra a ficha para ver os 5 blocos (dados, lotação, aposentadoria, cursos e talentos), documentos e processos." />
       <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-[2fr_1fr_1fr]">
         <div className="relative">
           <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-marinho-600" />
