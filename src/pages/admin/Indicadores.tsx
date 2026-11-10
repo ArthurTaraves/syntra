@@ -5,27 +5,39 @@ import { CabecalhoPagina, Cartao } from '../../components/painel/ui'
 import { GRUPO_MINIMO_PRIVACIDADE, HORIZONTE_APOSENTADORIA_ANOS } from '../../config/regrasRH'
 import { useContextoAcesso } from '../../hooks/useAuth'
 import { useCarregar } from '../../hooks/useCarregar'
-import { calcularAlertas, calcularAposentadoria, MSG_DADOS_INSUFICIENTES, textoAtualizacao, valorProtegido, type AlertaUnidade, type NivelRisco } from '../../lib/rh'
+import { calcularAlertas, calcularAposentadoria, MSG_DADOS_INSUFICIENTES, protegerLista, textoAtualizacao, valorProtegido, type AlertaUnidade, type NivelRisco } from '../../lib/rh'
 import { servicos } from '../../services'
 import { AREAS_CAPACITACAO, LOTACOES, type Lotacao } from '../../types'
 
 const COR_BARRA = '#17387a'
 
-/** Barras horizontais com proteção de privacidade: grupos de 1 a 4 pessoas não são exibidos. */
-function BarrasProtegidas({ titulo, descricao, linhas }: { titulo: string; descricao?: string; linhas: { rotulo: string; valor: number }[] }) {
-  const max = Math.max(1, ...linhas.map((l) => valorProtegido(l.valor) ?? 0))
+interface Linha {
+  rotulo: string
+  /** Já protegido por `protegerLista` (null = oculto). */
+  valor: number | null
+}
+
+/** Monta as linhas de uma lista aplicando a proteção (primária + complementar) de src/lib/rh.ts. */
+function protegerLinhas(linhas: { rotulo: string; valor: number }[], total?: number): { linhas: Linha[]; total: number | null } {
+  const p = protegerLista(linhas.map((l) => l.valor), total)
+  return { linhas: linhas.map((l, i) => ({ rotulo: l.rotulo, valor: p.valores[i] })), total: p.total }
+}
+
+/** Barras horizontais com proteção de privacidade: grupos pequenos (e os complementares) não são exibidos. */
+function BarrasProtegidas({ titulo, descricao, linhas }: { titulo: string; descricao?: string; linhas: Linha[] }) {
+  const max = Math.max(1, ...linhas.map((l) => l.valor ?? 0))
   return (
     <Cartao>
       <h2 className="font-bold text-marinho-900">{titulo}</h2>
       {descricao && <p className="mb-3 text-xs text-marinho-700">{descricao}</p>}
       <ul className="mt-3 flex flex-col gap-2.5">
         {linhas.map((l) => {
-          const v = valorProtegido(l.valor)
+          const v = l.valor
           return (
             <li key={l.rotulo} className="grid grid-cols-[9.5rem_1fr] items-center gap-3 text-sm sm:grid-cols-[12rem_1fr]">
               <span className="truncate text-marinho-900" title={l.rotulo}>{l.rotulo}</span>
               {v === null ? (
-                <span className="rounded bg-marinho-50 px-2 py-1 text-xs italic text-marinho-700" title={`Grupo com menos de ${GRUPO_MINIMO_PRIVACIDADE} pessoas`}>
+                <span className="rounded bg-marinho-50 px-2 py-1 text-xs italic text-marinho-700" title={`Oculto para que nenhum grupo com menos de ${GRUPO_MINIMO_PRIVACIDADE} pessoas possa ser identificado`}>
                   {MSG_DADOS_INSUFICIENTES}
                 </span>
               ) : (
@@ -42,8 +54,9 @@ function BarrasProtegidas({ titulo, descricao, linhas }: { titulo: string; descr
   )
 }
 
-function Numero({ rotulo, valor, Icone, nota }: { rotulo: string; valor: number; Icone: LucideIcon; nota?: string }) {
-  const v = valorProtegido(valor)
+/** `valor` já protegido (null = oculto). */
+function Numero({ rotulo, valor, Icone, nota }: { rotulo: string; valor: number | null; Icone: LucideIcon; nota?: string }) {
+  const v = valor
   return (
     <Cartao className="flex items-start gap-4">
       <span className="flex size-12 shrink-0 items-center justify-center rounded-lg bg-marinho-900 text-destaque-500"><Icone className="size-6" aria-hidden /></span>
@@ -96,18 +109,30 @@ export default function Indicadores() {
     const { servidores, contagem } = dados
     const ap = new Map(servidores.map((s) => [s.id, calcularAposentadoria(s)]))
     const proximos = servidores.filter((s) => ap.get(s.id)!.proxima)
-    return {
-      total: servidores.length,
-      proximos: proximos.length,
-      desatualizadas: servidores.filter((s) => textoAtualizacao(s.fichaAtualizadaEm).desatualizada).length,
-      porUnidade: unidades.map((u) => ({ rotulo: u, valor: servidores.filter((s) => s.lotacao === u).length })),
-      aposPorUnidade: unidades.map((u) => ({ rotulo: u, valor: proximos.filter((s) => s.lotacao === u).length })),
-      aposPorFaixa: [
+
+    // Listas cujo total aparece no topo: proteção primária + complementar (src/lib/rh.ts).
+    const porUnidade = protegerLinhas(unidades.map((u) => ({ rotulo: u, valor: servidores.filter((s) => s.lotacao === u).length })), servidores.length)
+    const aposPorUnidade = protegerLinhas(unidades.map((u) => ({ rotulo: u, valor: proximos.filter((s) => s.lotacao === u).length })), proximos.length)
+    const aposPorFaixa = protegerLinhas(
+      [
         { rotulo: 'Já cumprem os requisitos', valor: proximos.filter((s) => ap.get(s.id)!.jaCumpre).length },
         { rotulo: 'Em até 2 anos', valor: proximos.filter((s) => !ap.get(s.id)!.jaCumpre && ap.get(s.id)!.anosRestantes <= 2).length },
         { rotulo: `De 2 a ${HORIZONTE_APOSENTADORIA_ANOS} anos`, valor: proximos.filter((s) => ap.get(s.id)!.anosRestantes > 2).length },
       ],
-      porArea: AREAS_CAPACITACAO.map((a) => ({ rotulo: a, valor: servidores.filter((s) => s.capacitacoes.some((c) => c.area === a)).length })),
+      proximos.length,
+    )
+    // O mesmo total aparece em duas listas: se qualquer uma precisar ocultá-lo, ele some do topo.
+    const totalProximos = aposPorUnidade.total === null || aposPorFaixa.total === null ? null : aposPorUnidade.total
+
+    return {
+      total: porUnidade.total,
+      proximos: totalProximos,
+      desatualizadas: valorProtegido(servidores.filter((s) => textoAtualizacao(s.fichaAtualizadaEm).desatualizada).length),
+      porUnidade: porUnidade.linhas,
+      aposPorUnidade: aposPorUnidade.linhas,
+      aposPorFaixa: aposPorFaixa.linhas,
+      // Áreas se sobrepõem (um servidor pode ter cursos em várias) e não há total exibido: só a proteção primária.
+      porArea: protegerLinhas(AREAS_CAPACITACAO.map((a) => ({ rotulo: a, valor: servidores.filter((s) => s.capacitacoes.some((c) => c.area === a)).length }))).linhas,
       alertas: calcularAlertas(servidores, unidades, contagem).sort((a, b) => ['vermelho', 'amarelo', 'verde'].indexOf(a.nivel) - ['vermelho', 'amarelo', 'verde'].indexOf(b.nivel)),
     }
   }, [dados, unidades])
@@ -143,7 +168,7 @@ export default function Indicadores() {
 
           <p className="flex items-start gap-2 rounded-lg bg-marinho-50 p-3 text-xs text-marinho-900">
             <ShieldCheck className="size-4 shrink-0" aria-hidden />
-            LGPD: números de grupos com 1 a {GRUPO_MINIMO_PRIVACIDADE - 1} pessoas não são exibidos, para que ninguém possa ser identificado.
+            LGPD: números de grupos com 1 a {GRUPO_MINIMO_PRIVACIDADE - 1} pessoas não são exibidos, e outros valores (ou o total) também são ocultados quando seria possível descobri-los por subtração. Os alertas usam faixas qualitativas em vez de números.
             Previsões de aposentadoria são estimativas pela regra simplificada configurada pelo RH.
           </p>
         </div>

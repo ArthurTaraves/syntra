@@ -148,9 +148,8 @@ export function calcularAlertas(
           : 'verde'
 
     const motivos: string[] = []
-    const pct = Math.round(percentual * 100)
     if (saindo.size > 0)
-      motivos.push(`${pct}% da equipe com aposentadoria prevista em até ${HORIZONTE_APOSENTADORIA_ANOS} anos.`)
+      motivos.push(`${descreverParcela(saindo.size, membros.length)} com aposentadoria prevista em até ${HORIZONTE_APOSENTADORIA_ANOS} anos.`)
     raras.forEach((c) => motivos.push(`Competência rara em risco: ${c.nome} (só existe nesta unidade em quem está perto de se aposentar).`))
     competenciasEmRisco.filter((c) => !c.rara).forEach((c) => motivos.push(`A unidade pode ficar sem: ${c.nome}.`))
     if (motivos.length === 0) motivos.push('Sem perdas relevantes previstas no horizonte.')
@@ -218,4 +217,56 @@ export const MSG_DADOS_INSUFICIENTES = 'Dados insuficientes para preservar a pri
  */
 export function valorProtegido(n: number): number | null {
   return n === 0 || n >= GRUPO_MINIMO_PRIVACIDADE ? n : null
+}
+
+/**
+ * Descreve "quantos de uma equipe" sem expor números de grupos pequenos.
+ * Só mostra porcentagem quando a equipe E o grupo afetado têm pelo menos 5 pessoas;
+ * caso contrário usa faixas qualitativas.
+ */
+export function descreverParcela(afetados: number, equipe: number): string {
+  if (afetados <= 0 || equipe <= 0) return 'Ninguém da equipe'
+  const fracao = afetados / equipe
+  if (equipe >= GRUPO_MINIMO_PRIVACIDADE && afetados >= GRUPO_MINIMO_PRIVACIDADE) return `${Math.round(fracao * 100)}% da equipe`
+  if (fracao > 0.5) return 'Mais da metade da equipe'
+  if (fracao >= ALERTA_RISCO.percentualAmarelo) return 'Parte relevante da equipe'
+  return 'Poucos servidores'
+}
+
+export interface ListaProtegida {
+  /** Valor de cada grupo, ou `null` quando ocultado (primária ou complementar). */
+  valores: (number | null)[]
+  /** Total da lista, ou `null` quando precisou ser ocultado. */
+  total: number | null
+}
+
+/**
+ * Proteção de uma lista agregada com total conhecido (LGPD):
+ * 1) supressão PRIMÁRIA: grupos de 1 a 4 pessoas ficam ocultos;
+ * 2) supressão COMPLEMENTAR: se o que ficou oculto puder ser descoberto por subtração
+ *    (um único valor oculto, ou ocultos que somam menos de 5), oculta também o menor valor
+ *    visível não nulo — e, se não houver nenhum, oculta o total.
+ * Sem `total` (ex.: categorias que se sobrepõem, cuja soma não é exibida), aplica só a primária.
+ */
+export function protegerLista(valores: number[], total?: number): ListaProtegida {
+  const saida = valores.map(valorProtegido)
+  if (total === undefined) return { valores: saida, total: null }
+  let totalVisivel: number | null = valorProtegido(total)
+  // Total oculto: não há como descobrir nada por subtração.
+  while (totalVisivel !== null) {
+    const ocultos = valores.map((v, i) => ({ v, i })).filter(({ v, i }) => saida[i] === null && v > 0)
+    if (ocultos.length === 0) break
+    const somaOculta = ocultos.reduce((s, o) => s + o.v, 0)
+    if (ocultos.length >= 2 && somaOculta >= GRUPO_MINIMO_PRIVACIDADE) break
+    const candidatos = valores
+      .map((v, i) => ({ v, i }))
+      .filter(({ v, i }) => saida[i] !== null && v > 0)
+      .sort((a, b) => a.v - b.v)
+    if (candidatos.length === 0) {
+      totalVisivel = null
+      break
+    }
+    saida[candidatos[0].i] = null
+  }
+  return { valores: saida, total: totalVisivel }
 }

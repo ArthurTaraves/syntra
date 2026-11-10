@@ -14,6 +14,11 @@ interface Props {
   linkDocumento?: (id: string) => string | null
   /** Competências raras na Superintendência (destaque no bloco 5). */
   competenciasRaras?: Set<string>
+  /**
+   * Não exibe o CPF, nem mascarado. Usado no totem: ele fica em ponto fixo e outra
+   * pessoa pode ver a tela. No painel o CPF aparece mascarado.
+   */
+  ocultarCpf?: boolean
 }
 
 /** Selo "Ficha atualizada há X meses" (amarelo quando passa do limite configurado). */
@@ -63,7 +68,7 @@ function Campos({ itens, grande }: { itens: [string, ReactNode][]; grande?: bool
 }
 
 /** Ficha do servidor com os 5 blocos da proposta (docs/PROPOSTA.md). */
-export function FichaBlocos({ servidor: s, grande, linkDocumento, competenciasRaras }: Props) {
+export function FichaBlocos({ servidor: s, grande, linkDocumento, competenciasRaras, ocultarCpf }: Props) {
   const ap = calcularAposentadoria(s)
   const txt = grande ? 'text-lg' : 'text-sm'
   const chip = grande ? 'px-4 py-2 text-lg' : 'px-3 py-1 text-sm'
@@ -79,7 +84,7 @@ export function FichaBlocos({ servidor: s, grande, linkDocumento, competenciasRa
           ['Cargo', s.cargo],
           ['Situação funcional', <span key="s" className="capitalize">{s.situacao}</span>],
           ['E-mail institucional', s.email],
-          ['CPF', mascararCpf(s.cpfMascarado)],
+          ...(ocultarCpf ? [] : ([['CPF', mascararCpf(s.cpfMascarado)]] as [string, ReactNode][])),
         ]} />
       </Bloco>
 

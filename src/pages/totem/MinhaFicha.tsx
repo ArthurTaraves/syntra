@@ -42,7 +42,8 @@ export default function MinhaFicha() {
         </Link>
       </div>
 
-      <FichaBlocos servidor={s} grande linkDocumento={(id) => `/totem/documento/${id}`} />
+      {/* Totem em ponto fixo: o CPF não é exibido (nem mascarado). */}
+      <FichaBlocos servidor={s} grande ocultarCpf linkDocumento={(id) => `/totem/documento/${id}`} />
 
       <h2 className="mb-4 mt-8 text-3xl font-extrabold text-marinho-900">Minhas solicitações</h2>
       {dados.solicitacoes.length === 0 ? (
