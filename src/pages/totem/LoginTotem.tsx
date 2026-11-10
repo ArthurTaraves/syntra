@@ -127,8 +127,8 @@ export default function LoginTotem() {
           </p>
         </form>
 
-        <div className="flex-1 rounded-3xl bg-marinho-50 p-4">
-          <p className="mb-3 text-center text-lg font-semibold text-marinho-700">
+        <div className="flex flex-1 flex-col justify-center rounded-3xl bg-marinho-50 p-4 portrait:p-6">
+          <p className="mb-3 text-center text-lg font-semibold text-marinho-700 portrait:mb-5 portrait:text-xl">
             Digitando: <span className="text-marinho-950">{campo === 'matricula' ? 'Matrícula' : 'Senha'}</span>
           </p>
           <TecladoVirtual

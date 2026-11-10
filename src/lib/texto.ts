@@ -61,6 +61,11 @@ export function formatarDataHora(iso: string): string {
   return fmtDataHora.format(new Date(iso))
 }
 
+/** Só a primeira letra maiúscula: "terça-feira, 10 de novembro" → "Terça-feira, 10 de novembro". */
+export function primeiraMaiuscula(texto: string): string {
+  return texto.charAt(0).toUpperCase() + texto.slice(1)
+}
+
 export function hojeISO(): string {
   const d = new Date()
   const p = (n: number) => String(n).padStart(2, '0')

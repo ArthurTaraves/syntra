@@ -3,6 +3,7 @@ import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { Logo } from '../../components/Logo'
 import { useAuth } from '../../hooks/useAuth'
 import { useRelogio } from '../../hooks/useRelogio'
+import { primeiraMaiuscula } from '../../lib/texto'
 import { modoDemonstracao } from '../../services'
 
 /** Tela de descanso do totem: qualquer toque leva ao login. */
@@ -41,14 +42,15 @@ export default function Descanso() {
           <p className="text-7xl font-bold tabular-nums sm:text-8xl">
             {agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
           </p>
-          <p className="mt-2 text-2xl capitalize text-marinho-100">
-            {agora.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}
+          {/* Data formatada no código (não via CSS capitalize, que capitaliza cada palavra). */}
+          <p className="mt-2 text-2xl text-marinho-100">
+            {primeiraMaiuscula(agora.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' }))}
           </p>
         </div>
 
         <button type="button"
           onClick={(e) => { e.stopPropagation(); comecar() }}
-          className="mt-8 flex min-h-24 items-center gap-4 rounded-3xl bg-destaque-500 px-12 text-3xl font-extrabold text-marinho-950 shadow-2xl motion-safe:animate-pulse active:bg-destaque-400 sm:text-4xl">
+          className="mt-8 flex min-h-24 items-center gap-4 rounded-3xl bg-destaque-500 px-12 text-3xl font-extrabold text-marinho-950 shadow-2xl motion-safe:animate-respirar active:bg-destaque-400 sm:text-4xl">
           <Hand className="size-10" aria-hidden /> Toque para começar
         </button>
       </div>

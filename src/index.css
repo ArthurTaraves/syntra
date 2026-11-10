@@ -17,6 +17,21 @@
   --color-fundo: #f5f7fb;
 
   --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  /* Chamada de atenção do botão "Toque para começar": varia só tamanho e brilho,
+     nunca a opacidade — o amarelo e o contraste ficam sempre fortes. */
+  --animate-respirar: respirar 2.4s ease-in-out infinite;
+  @keyframes respirar {
+    0%,
+    100% {
+      transform: scale(1);
+      box-shadow: 0 20px 40px -12px rgb(0 0 0 / 0.45), 0 0 0 0 rgb(245 196 0 / 0.55);
+    }
+    50% {
+      transform: scale(1.05);
+      box-shadow: 0 24px 48px -12px rgb(0 0 0 / 0.5), 0 0 0 18px rgb(245 196 0 / 0);
+    }
+  }
 }
 
 html,
