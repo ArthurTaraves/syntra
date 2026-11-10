@@ -292,6 +292,8 @@ export function criarProviderFirebase(): DataProvider {
             }
             lote.update(doc(db, 'servidores', servidor.id), {
               fichaAtualizadaEm: efeito.fichaAtualizadaEm,
+              // As regras conferem (getAfter) que este pedido foi aprovado no MESMO lote.
+              ultimaSolicitacaoAprovada: sol.id,
               ...(efeito.capacitacao
                 ? { capacitacoes: arrayUnion({ ...efeito.capacitacao, id: `cap-${servidor.matricula}-${Date.now().toString(36)}`, ...(documentoId ? { documentoId } : {}) }) }
                 : {}),

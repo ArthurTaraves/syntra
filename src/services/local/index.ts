@@ -270,6 +270,7 @@ export function criarProviderLocal(): DataProvider {
           if (efeito.capacitacao)
             servidor.capacitacoes.push({ ...efeito.capacitacao, id: `cap-${servidor.matricula}-${Date.now().toString(36)}`, documentoId })
           servidor.fichaAtualizadaEm = efeito.fichaAtualizadaEm
+          servidor.ultimaSolicitacaoAprovada = sol.id
         }
         Object.assign(sol, {
           status: decisao,

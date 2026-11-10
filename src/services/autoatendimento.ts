@@ -44,6 +44,7 @@ export function efeitoDaAprovacao(sol: Solicitacao, servidor: Servidor): EfeitoA
     status: 'Ativo' as const,
     nivelAcesso: 'restrito' as const,
     origemCadastro: 'autoatendimento' as const,
+    solicitacaoId: sol.id,
     localizacaoFisica: `Acervo digital – autoatendimento${sol.nomeArquivo ? ` (arquivo: ${sol.nomeArquivo})` : ''}`,
   }
   if (sol.tipo === 'capacitacao' && sol.capacitacao) {

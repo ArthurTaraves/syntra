@@ -70,6 +70,8 @@ export interface Servidor {
   indicacoes: string[]
   /** Última atualização aprovada da ficha ("atualizada há X meses"). */
   fichaAtualizadaEm: string
+  /** id do último pedido de autoatendimento aprovado (as regras do Firestore conferem). */
+  ultimaSolicitacaoAprovada?: string
 }
 
 export const INDICACOES = ['Liderança', 'Instrutoria', 'Mentoria', 'Projetos'] as const
@@ -143,6 +145,8 @@ export interface Documento {
   nivelAcesso: NivelAcesso
   /** "autoatendimento" = enviado pelo servidor e aprovado pelo gestor/RH. */
   origemCadastro?: 'painel' | 'autoatendimento'
+  /** Pedido de autoatendimento que originou o documento (quando origemCadastro = "autoatendimento"). */
+  solicitacaoId?: string
   criadoPor: string
   criadoEm: string
   atualizadoEm: string

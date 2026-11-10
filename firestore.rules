@@ -2,12 +2,15 @@ rules_version = '2';
 
 // Regras de segurança do SYNTRA — as MESMAS regras de perfil do app
 // (src/services/permissoes.ts), aplicadas no servidor. O front-end nunca é a única proteção.
+// Especificação: docs/PROPOSTA.md ("LGPD funcionando no back-end, não só na tela").
 //
 // Perfis (coleção "usuarios/{uid}", campo "perfil"):
-//   servidor → próprios documentos + documentos "publico-interno"; nunca "sigiloso"
-//   gestor   → documentos da sua unidade (campo "lotacao")
-//   admin    → lê e escreve tudo
-// Logs: somente inclusão; ninguém edita ou apaga; só admin lê.
+//   servidor → só a PRÓPRIA ficha; envia atualizações (autoatendimento) para aprovação;
+//              documentos próprios + "publico-interno"; nunca "sigiloso"
+//   gestor   → fichas e documentos da SUA unidade; aprova atualizações da unidade
+//              (nunca o próprio pedido)
+//   admin    → RH: vê e edita tudo
+// Logs: somente inclusão; ninguém edita ou apaga; só o RH lê.
 
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -52,17 +55,86 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // ---------- Servidores ----------
+    // ---------- Autoatendimento: aprovação no mesmo lote ----------
+    // Confere que o pedido `idSol` era do servidor `matricula`, estava "pendente" ANTES
+    // e fica "aprovada" DEPOIS do lote de gravação (getAfter).
+    function caminhoSol(idSol) {
+      return /databases/$(database)/documents/solicitacoes/$(idSol);
+    }
+    function aprovadaNoMesmoLote(idSol, matricula) {
+      return idSol is string
+        && get(caminhoSol(idSol)).data.status == 'pendente'
+        && getAfter(caminhoSol(idSol)).data.status == 'aprovada'
+        && getAfter(caminhoSol(idSol)).data.matriculaServidor == matricula;
+    }
+
+    // ---------- Servidores (fichas) ----------
+    function fichaValida() {
+      let s = request.resource.data;
+      return matriculaValida(s.matricula)
+        && lotacaoValida(s.lotacao)
+        // LGPD: nunca guardar CPF completo — só o campo mascarado, no formato ***.000.000-**
+        && !('cpf' in s)
+        && s.cpfMascarado.matches('^[*]{3}[.][0-9]{3}[.][0-9]{3}-[*]{2}$');
+    }
+
     match /servidores/{id} {
+      // Servidor: só a própria ficha · Gestor: só a sua unidade · RH: todas.
       allow read: if isAdmin()
         || (isGestor() && resource.data.lotacao == eu().unidade)
-        || (isServidor() && resource.data.matricula == eu().matricula);
-      allow create, update: if isAdmin()
-        && matriculaValida(request.resource.data.matricula)
-        && lotacaoValida(request.resource.data.lotacao)
-        // LGPD: nunca guardar CPF completo — só o campo mascarado, no formato ***.000.000-**
-        && !('cpf' in request.resource.data)
-        && request.resource.data.cpfMascarado.matches('^[*]{3}[.][0-9]{3}[.][0-9]{3}-[*]{2}$');
+        || (temPerfil() && resource.data.matricula == eu().matricula);
+      allow create: if isAdmin() && fichaValida();
+      allow update: if (isAdmin() && fichaValida())
+        // Gestor: só aplica um pedido APROVADO da sua unidade (curso + data de atualização),
+        // nunca na própria ficha e sem tocar em nenhum outro campo.
+        || (isGestor()
+            && resource.data.lotacao == eu().unidade
+            && resource.data.matricula != eu().matricula
+            && request.resource.data.diff(resource.data).affectedKeys()
+                 .hasOnly(['capacitacoes', 'fichaAtualizadaEm', 'ultimaSolicitacaoAprovada'])
+            && aprovadaNoMesmoLote(request.resource.data.ultimaSolicitacaoAprovada, resource.data.matricula));
+      allow delete: if false;
+    }
+
+    // ---------- Estatísticas agregadas (só números, sem dados pessoais) ----------
+    // Ex.: estatisticas/competencias = { contagem: { "Libras": 2, ... } }, usada pelo alerta de
+    // risco do gestor para medir raridade sem ler fichas de outras unidades.
+    match /estatisticas/{id} {
+      allow read: if isGestor() || isAdmin();
+      allow write: if isAdmin();
+    }
+
+    // ---------- Solicitações de autoatendimento ----------
+    function solicitacaoNovaValida() {
+      let s = request.resource.data;
+      return s.matriculaServidor == eu().matricula
+        && s.lotacao == eu().unidade
+        && s.criadaPorUid == request.auth.uid
+        && s.status == 'pendente'
+        && s.tipo in ['capacitacao', 'documento']
+        && s.origem in ['totem', 'painel']
+        && !('decididaEm' in s) && !('decididaPorUid' in s) && !('motivoRecusa' in s);
+    }
+
+    match /solicitacoes/{id} {
+      allow read: if isAdmin()
+        || (isGestor() && resource.data.lotacao == eu().unidade)
+        || (temPerfil() && resource.data.matriculaServidor == eu().matricula);
+      // Cada um envia pedidos SOMENTE em seu próprio nome, sempre "pendente".
+      allow create: if temPerfil() && solicitacaoNovaValida();
+      // Decisão: só de "pendente" para "aprovada"/"recusada", registrando quem decidiu.
+      // Recusa exige motivo. Gestor: só da sua unidade e nunca o próprio pedido.
+      allow update: if resource.data.status == 'pendente'
+        && request.resource.data.status in ['aprovada', 'recusada']
+        && request.resource.data.decididaPorUid == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['status', 'decididaEm', 'decididaPorUid', 'decididaPorNome', 'motivoRecusa'])
+        && (request.resource.data.status == 'aprovada'
+            || (request.resource.data.motivoRecusa is string && request.resource.data.motivoRecusa.size() > 0))
+        && (isAdmin()
+            || (isGestor()
+                && resource.data.lotacao == eu().unidade
+                && resource.data.matriculaServidor != eu().matricula));
       allow delete: if false;
     }
 
@@ -71,7 +143,9 @@ service cloud.firestore {
       let d = request.resource.data;
       return d.keys().hasAll(['titulo', 'tipo', 'numeroProcesso', 'matriculaServidor', 'lotacao',
                               'dataDocumento', 'localizacaoFisica', 'status', 'nivelAcesso'])
-        && d.numeroProcesso.matches('^[0-9]{5}[.][0-9]{6}/[0-9]{4}-[0-9]{2}$')
+        // Nº SEI no formato oficial; vazio só para documentos vindos do autoatendimento.
+        && (d.numeroProcesso.matches('^[0-9]{5}[.][0-9]{6}/[0-9]{4}-[0-9]{2}$')
+            || (d.numeroProcesso == '' && d.get('origemCadastro', '') == 'autoatendimento'))
         && matriculaValida(d.matriculaServidor)
         && d.status in ['Ativo', 'Arquivado', 'Em tramitação']
         && d.nivelAcesso in ['publico-interno', 'restrito', 'sigiloso']
@@ -87,8 +161,18 @@ service cloud.firestore {
             && resource.data.nivelAcesso in ['publico-interno', 'restrito']
             && (resource.data.matriculaServidor == eu().matricula
                 || resource.data.nivelAcesso == 'publico-interno'));
-      // Cadastrar, editar e arquivar: somente admin. Apagar: ninguém (usa-se "arquivar").
+      // Cadastrar, editar e arquivar: somente o RH. Apagar: ninguém (usa-se "arquivar").
       allow create, update: if isAdmin() && documentoValido();
+      // Gestor: só cria o comprovante de um pedido APROVADO da sua unidade (mesmo lote),
+      // sempre restrito, sem nº de processo e nunca para si mesmo.
+      allow create: if isGestor()
+        && documentoValido()
+        && request.resource.data.origemCadastro == 'autoatendimento'
+        && request.resource.data.nivelAcesso == 'restrito'
+        && request.resource.data.numeroProcesso == ''
+        && request.resource.data.lotacao == eu().unidade
+        && request.resource.data.matriculaServidor != eu().matricula
+        && aprovadaNoMesmoLote(request.resource.data.solicitacaoId, request.resource.data.matriculaServidor);
       allow delete: if false;
     }
 
