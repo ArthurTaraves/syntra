@@ -1,6 +1,7 @@
 import { Search, X } from 'lucide-react'
 import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
+import { useAuth } from '../../hooks/useAuth'
 import { ResultadosTotem } from '../../components/totem/ResultadosTotem'
 import { TituloTotem } from '../../components/totem/TituloTotem'
 import type { FiltrosDocumento } from '../../services'
@@ -41,6 +42,9 @@ function Chip({ ativo, onClick, children }: { ativo: boolean; onClick: () => voi
 }
 
 export default function BuscaAvancada() {
+  const { usuario } = useAuth()
+  // Gestor: lotação fixa na própria unidade (os serviços já limitam; aqui só não oferecemos outras).
+  const gestor = usuario?.perfil === 'gestor'
   const [params, setParams] = useSearchParams()
   const buscou = params.get('buscou') === '1'
   const [tipo, setTipo] = useState<TipoDocumento | ''>((params.get('tipo') as TipoDocumento) ?? '')
@@ -85,7 +89,8 @@ export default function BuscaAvancada() {
 
   return (
     <>
-      <TituloTotem titulo="Busca avançada" subtitulo="Escolha os filtros e toque em Buscar." />
+      <TituloTotem titulo="Busca avançada"
+        subtitulo={gestor ? `Documentos da ${usuario?.unidade}. Escolha os filtros e toque em Buscar.` : 'Escolha os filtros e toque em Buscar.'} />
       <div className="flex flex-col gap-8 rounded-3xl bg-white p-6 shadow-md ring-1 ring-marinho-100">
         <Chips titulo="Tipo de documento" opcoes={TIPOS_DOCUMENTO} valor={tipo} aoMudar={setTipo} />
         <fieldset>
@@ -97,7 +102,13 @@ export default function BuscaAvancada() {
           </div>
         </fieldset>
         <Chips titulo="Status" opcoes={STATUS_DOCUMENTO} valor={status} aoMudar={setStatus} />
-        <Chips titulo="Lotação" opcoes={LOTACOES} valor={lotacao} aoMudar={setLotacao} />
+        {gestor ? (
+          <p className="text-xl text-marinho-800">
+            <strong>Lotação:</strong> {usuario?.unidade} (somente a sua unidade)
+          </p>
+        ) : (
+          <Chips titulo="Lotação" opcoes={LOTACOES} valor={lotacao} aoMudar={setLotacao} />
+        )}
       </div>
       <button type="button" onClick={buscar}
         className="sticky bottom-4 mt-6 flex min-h-20 w-full items-center justify-center gap-3 rounded-2xl bg-marinho-800 text-2xl font-bold text-white shadow-xl active:bg-marinho-700">

@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { Carregando } from './components/Estados'
 import { RotaProtegida } from './components/RotaProtegida'
+import { ExigePerfil } from './components/totem/ExigePerfil'
 import { TotemLogado } from './components/totem/TotemLogado'
 import { TotemShell } from './components/totem/TotemShell'
 import { AuthProvider } from './hooks/useAuth'
@@ -14,7 +15,12 @@ import LoginTotem from './pages/totem/LoginTotem'
 import MenuTotem from './pages/totem/MenuTotem'
 import EnviarAtualizacao from './pages/totem/EnviarAtualizacao'
 import MeusDocumentos from './pages/totem/MeusDocumentos'
+import FichaTotem from './pages/totem/FichaTotem'
 import MinhaFicha from './pages/totem/MinhaFicha'
+import PedidosTotem from './pages/totem/PedidosTotem'
+
+/** Telas do totem só para gestor e RH (o servidor vê apenas a própria ficha). */
+const GESTAO = ['gestor', 'admin'] as const
 
 // O painel (e o recharts) só é baixado quando alguém abre /admin: o totem fica leve.
 const PainelLayout = lazy(() => import('./components/painel/PainelLayout').then((m) => ({ default: m.PainelLayout })))
@@ -50,8 +56,11 @@ export default function App() {
               <Route element={<RotaProtegida login="/totem/login"><TotemLogado /></RotaProtegida>}>
                 <Route path="menu" element={<MenuTotem />} />
                 <Route path="busca/processo" element={<BuscaProcesso />} />
-                <Route path="busca/servidor" element={<BuscaServidor />} />
-                <Route path="busca/avancada" element={<BuscaAvancada />} />
+                {/* Servidor é redirecionado ao menu nestas telas. */}
+                <Route path="busca/servidor" element={<ExigePerfil perfis={[...GESTAO]}><BuscaServidor /></ExigePerfil>} />
+                <Route path="busca/avancada" element={<ExigePerfil perfis={[...GESTAO]}><BuscaAvancada /></ExigePerfil>} />
+                <Route path="ficha/:matricula" element={<ExigePerfil perfis={[...GESTAO]}><FichaTotem /></ExigePerfil>} />
+                <Route path="pedidos" element={<ExigePerfil perfis={[...GESTAO]}><PedidosTotem /></ExigePerfil>} />
                 <Route path="meus-documentos" element={<MeusDocumentos />} />
                 <Route path="minha-ficha" element={<MinhaFicha />} />
                 <Route path="minha-ficha/enviar" element={<EnviarAtualizacao />} />
