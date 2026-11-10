@@ -2,7 +2,6 @@ import { Home, LogOut, UserCircle2 } from 'lucide-react'
 import { Link, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
 import { useRelogio } from '../../hooks/useRelogio'
-import { ROTULO_PERFIL } from '../../services'
 import { Logo } from '../Logo'
 
 /** Cabeçalho fixo das telas logadas do totem: o botão "Sair" está sempre visível. */
@@ -30,10 +29,7 @@ export function TotemLogado() {
           <div className="ml-auto flex items-center gap-3">
             <div className="hidden items-center gap-2 text-right sm:flex">
               <UserCircle2 className="size-9 text-destaque-500" aria-hidden />
-              <div className="leading-tight">
-                <p className="text-lg font-semibold">{usuario?.nome.split(' ')[0]}</p>
-                <p className="text-sm text-marinho-100">{usuario && ROTULO_PERFIL[usuario.perfil]}</p>
-              </div>
+              <p className="text-lg font-semibold">{usuario?.nome.split(' ')[0]}</p>
             </div>
             <Link to="/totem/menu"
               className="flex min-h-16 items-center gap-2 rounded-2xl bg-marinho-700 px-5 text-xl font-semibold active:bg-marinho-600">

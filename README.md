@@ -63,19 +63,21 @@ Os documentos e informações dos servidores estão **fragmentados** em pastas f
 
 Níveis de acesso dos documentos: `publico-interno`, `restrito` e `sigiloso` (este nunca é exibido no totem).
 
-## Contas de demonstração
+## Conta de demonstração
 
-Senha de todas as contas: **`syntra123`**
+A demonstração usa **uma única conta, com acesso total**:
 
-| Perfil | Matrícula | Nome (fictício) | Unidade |
+| Matrícula | Senha | Nome (fictício) | Acesso |
 |---|---|---|---|
-| Servidor | **1001** | Camila | Delegacia de Teresina |
-| Gestor | **1002** | Camila | Delegacia de Parnaíba |
-| Admin | **1003** | Camila | Superintendência – Teresina |
+| **1001** | **`syntra123`** | Camila | Total (perfil administrador): totem **e** painel `/admin` |
 
-As três contas se chamam “Camila”; o perfil aparece ao lado do nome no cabeçalho. **Todas as matrículas do sistema têm exatamente 4 dígitos**: as contas usam 1001–1003 e os demais servidores fictícios, 1004–1030. Uma matrícula digitada com outro tamanho mostra “A matrícula tem 4 dígitos” e **não conta** como tentativa errada para o bloqueio.
+- No **totem**, o cabeçalho mostra só o nome (“Camila”). Como o perfil é de administrador, o totem continua **sem exibir documentos sigilosos**.
+- O **painel do RH** pode ser aberto pelo link discreto **“Acesso do RH (painel)”** no rodapé da tela inicial do totem, ou direto em `/admin`.
+- Os perfis **servidor** e **gestor** continuam implementados no código e em `firestore.rules`, prontos para a implantação real. Só não há contas de demonstração para eles.
 
-O acervo fictício tem **30 servidores, 120 documentos e 40 processos** em 6 lotações do Piauí, além de cerca de 390 registros de acesso de exemplo dos últimos 30 dias, que alimentam os relatórios.
+**Todas as matrículas do sistema têm exatamente 4 dígitos**: a conta usa 1001 e os demais servidores fictícios vão de 1002 a 1030. Uma matrícula digitada com outro tamanho mostra “A matrícula tem 4 dígitos” e **não conta** como tentativa errada para o bloqueio.
+
+O acervo fictício tem **30 servidores, 120 documentos e 40 processos** em 6 lotações do Piauí, além de cerca de 380 registros de acesso de exemplo dos últimos 30 dias, que alimentam os relatórios.
 
 ## Como rodar
 

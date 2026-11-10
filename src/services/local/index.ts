@@ -10,14 +10,26 @@ import { aplicarFiltros } from '../filtros'
 import { podeVerDocumento, podeVerProcesso, podeVerServidor } from '../permissoes'
 import { ErroServico, type Contexto, type DataProvider } from '../tipos'
 
-// Versão do acervo local. Ao mudar o formato dos dados fictícios (ex.: v2 = matrículas de
-// 4 dígitos e contas "Camila"), suba a versão: o navegador descarta os dados antigos e
-// recarrega o acervo novo automaticamente.
-const VERSAO = 'v2'
-const CHAVE_DADOS = `syntra:demo:dados:${VERSAO}`
-const CHAVE_SENHAS = `syntra:demo:senhas:${VERSAO}`
-const CHAVE_SESSAO = `syntra:demo:sessao:${VERSAO}`
-const CHAVES_ANTIGAS = ['syntra:demo:dados:v1', 'syntra:demo:senhas:v1', 'syntra:demo:sessao']
+// Versão do acervo local. Ao mudar os dados fictícios, suba a versão: o navegador descarta
+// os dados antigos e recarrega o acervo novo automaticamente.
+//   v2 = matrículas de 4 dígitos · v3 = uma única conta de demonstração (Camila, admin)
+const VERSAO = 'v3'
+const PREFIXO = 'syntra:demo:'
+const CHAVE_DADOS = `${PREFIXO}dados:${VERSAO}`
+const CHAVE_SENHAS = `${PREFIXO}senhas:${VERSAO}`
+const CHAVE_SESSAO = `${PREFIXO}sessao:${VERSAO}`
+const CHAVES_ATUAIS = [CHAVE_DADOS, CHAVE_SENHAS, CHAVE_SESSAO]
+
+/** Remove qualquer chave "syntra:demo:*" de versões anteriores (v1, v2, …). */
+function limparVersoesAntigas(storage: Storage | undefined) {
+  if (!storage) return
+  const antigas: string[] = []
+  for (let i = 0; i < storage.length; i++) {
+    const k = storage.key(i)
+    if (k?.startsWith(PREFIXO) && !CHAVES_ATUAIS.includes(k)) antigas.push(k)
+  }
+  antigas.forEach((k) => storage.removeItem(k))
+}
 
 interface Estado extends DadosSeed {
   senhas: Record<string, string>
@@ -44,10 +56,8 @@ const ss = typeof sessionStorage !== 'undefined' ? sessionStorage : undefined
 function carregarEstado(): Estado {
   // Remove os dados de versões anteriores (contas e matrículas antigas).
   try {
-    CHAVES_ANTIGAS.forEach((c) => {
-      ls?.removeItem(c)
-      ss?.removeItem(c)
-    })
+    limparVersoesAntigas(ls)
+    limparVersoesAntigas(ss)
   } catch {
     /* armazenamento indisponível */
   }

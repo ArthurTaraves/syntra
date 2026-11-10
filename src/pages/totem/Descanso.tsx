@@ -1,4 +1,4 @@
-import { Hand } from 'lucide-react'
+import { Hand, LayoutDashboard } from 'lucide-react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { Logo } from '../../components/Logo'
 import { useAuth } from '../../hooks/useAuth'
@@ -57,9 +57,16 @@ export default function Descanso() {
 
       <div className="flex flex-col items-center gap-2 text-base text-marinho-100">
         <p>Consulte a localização de documentos e processos funcionais.</p>
-        <Link to="/privacidade" onClick={(e) => e.stopPropagation()} className="underline underline-offset-4">
-          Privacidade e proteção de dados (LGPD)
-        </Link>
+        <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
+          <Link to="/privacidade" onClick={(e) => e.stopPropagation()} className="underline underline-offset-4">
+            Privacidade e proteção de dados (LGPD)
+          </Link>
+          {/* Atalho discreto para o painel (exige login de gestor/admin). */}
+          <Link to="/admin" onClick={(e) => e.stopPropagation()}
+            className="inline-flex items-center gap-1.5 text-marinho-100/80 underline-offset-4 hover:text-white hover:underline">
+            <LayoutDashboard className="size-4" aria-hidden /> Acesso do RH (painel)
+          </Link>
+        </div>
         {modoDemonstracao && (
           <p className="mt-2 rounded-full bg-destaque-500/20 px-4 py-1 text-sm text-destaque-400">
             Modo demonstração · dados fictícios

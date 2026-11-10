@@ -42,15 +42,14 @@ const isoDia = (d: Date) => `${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.g
 
 // ---------------------------------------------------------------------------
 // Contas de demonstração (também listadas no README)
-// Matrículas têm exatamente 4 dígitos. As três contas se chamam "Camila";
-// o perfil exibido ao lado do nome diferencia cada uma.
+// UMA única conta de demonstração, com acesso total (admin): entra no totem e no painel.
+// Os perfis servidor/gestor continuam no código e nas regras do Firestore para a
+// implantação real — apenas não há contas de demonstração para eles.
 // ---------------------------------------------------------------------------
 export const SENHA_DEMO = 'syntra123'
 
 export const CONTAS_DEMO: Usuario[] = [
-  { uid: 'demo-servidor', nome: 'Camila', matricula: '1001', perfil: 'servidor', unidade: 'Delegacia de Teresina' },
-  { uid: 'demo-gestor', nome: 'Camila', matricula: '1002', perfil: 'gestor', unidade: 'Delegacia de Parnaíba' },
-  { uid: 'demo-admin', nome: 'Camila', matricula: '1003', perfil: 'admin', unidade: 'Superintendência – Teresina' },
+  { uid: 'demo-camila', nome: 'Camila', matricula: '1001', perfil: 'admin', unidade: 'Superintendência – Teresina' },
 ]
 
 const PRENOMES = [
@@ -146,14 +145,14 @@ export function gerarSeed(agora: Date = new Date()): DadosSeed {
         nome = n
       }
     }
-    // 1001–1003: contas de demonstração; 1004–1030: demais servidores (4 dígitos).
+    // 1001: conta de demonstração (Camila); 1002–1030: demais servidores (4 dígitos).
     const matricula = String(1001 + i)
     const partes = nome
       .normalize('NFD')
       .replace(/[̀-ͯ]/g, '')
       .toLowerCase()
       .split(' ')
-    // Nome de uma palavra só (as contas "Camila"): usa a matrícula para o e-mail não repetir.
+    // Nome de uma palavra só (a conta "Camila"): usa a matrícula no e-mail.
     const login = partes.length > 1 ? [partes[0], partes[partes.length - 1]] : [partes[0], matricula]
     servidores.push({
       id: `srv-${matricula}`,
