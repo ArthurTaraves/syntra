@@ -24,7 +24,7 @@ Os documentos e informações dos servidores estão **fragmentados** em pastas f
 
 ### Totem de consulta (`/totem`)
 - Tela de descanso com data e hora e botão **“Toque para começar”** (entra em tela cheia).
-- Login por matrícula e senha com **teclado virtual próprio** (numérico e alfanumérico), sem depender do teclado do sistema.
+- Login por **matrícula de 4 dígitos** e senha. Em tela de toque, usa um **teclado virtual próprio** (numérico e alfanumérico); no computador, aceita o teclado físico (Enter avança, Tab funciona).
 - **Bloqueio de 30 segundos após 5 tentativas erradas** seguidas.
 - Menu com 4 opções: **nº de processo**, **matrícula ou nome do servidor**, **meus documentos** e **busca avançada** (tipo, período, status, lotação).
 - Busca tolerante: ignora acentos e maiúsculas e aceita nº de processo **com ou sem pontuação**.
@@ -69,9 +69,11 @@ Senha de todas as contas: **`syntra123`**
 
 | Perfil | Matrícula | Nome (fictício) | Unidade |
 |---|---|---|---|
-| Servidor | **1000001** | Lívia Andrade Bastos | Delegacia de Teresina |
-| Gestor | **1000002** | Caio Mendonça Tavares | Delegacia de Parnaíba |
-| Admin | **1000003** | Helena Prado Siqueira | Superintendência – Teresina |
+| Servidor | **1001** | Camila | Delegacia de Teresina |
+| Gestor | **1002** | Camila | Delegacia de Parnaíba |
+| Admin | **1003** | Camila | Superintendência – Teresina |
+
+As três contas se chamam “Camila”; o perfil aparece ao lado do nome no cabeçalho. **Todas as matrículas do sistema têm exatamente 4 dígitos**: as contas usam 1001–1003 e os demais servidores fictícios, 1004–1030. Uma matrícula digitada com outro tamanho mostra “A matrícula tem 4 dígitos” e **não conta** como tentativa errada para o bloqueio.
 
 O acervo fictício tem **30 servidores, 120 documentos e 40 processos** em 6 lotações do Piauí, além de cerca de 390 registros de acesso de exemplo dos últimos 30 dias, que alimentam os relatórios.
 
@@ -84,7 +86,7 @@ npm install
 npm run dev
 ```
 
-Acesse http://localhost:5173. **Sem nenhuma configuração**, o sistema roda em **modo demonstração**: os dados fictícios ficam no navegador (localStorage), com as mesmas regras de perfil. No painel, “Restaurar dados da demonstração” volta ao acervo original.
+Acesse http://localhost:5173. **Sem nenhuma configuração**, o sistema roda em **modo demonstração**: os dados fictícios ficam no navegador (localStorage), com as mesmas regras de perfil. No painel, “Restaurar dados da demonstração” volta ao acervo original. Quando o formato do acervo fictício muda, a versão dos dados locais é atualizada e o navegador recarrega o acervo novo sozinho.
 
 ### Com Firebase (dados na nuvem)
 1. Crie um projeto em https://console.firebase.google.com, ative **Authentication → E-mail/senha** e **Firestore Database**.

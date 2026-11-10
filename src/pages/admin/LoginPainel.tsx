@@ -5,6 +5,7 @@ import { Logo } from '../../components/Logo'
 import { Aviso, Botao, Campo, Entrada } from '../../components/painel/ui'
 import { useAuth } from '../../hooks/useAuth'
 import { mensagemDeErro } from '../../hooks/useCarregar'
+import { limparMatricula, MSG_MATRICULA_INVALIDA, PADRAO_MATRICULA, TAMANHO_MATRICULA } from '../../lib/texto'
 
 export default function LoginPainel() {
   const { usuario, entrar, sair } = useAuth()
@@ -19,6 +20,7 @@ export default function LoginPainel() {
 
   const enviar = async (e: FormEvent) => {
     e.preventDefault()
+    if (!PADRAO_MATRICULA.test(matricula)) return setErro(MSG_MATRICULA_INVALIDA)
     setErro(null)
     setEnviando(true)
     try {
@@ -45,7 +47,8 @@ export default function LoginPainel() {
         </div>
         <div className="flex flex-col gap-4">
           <Campo rotulo="Matrícula">
-            <Entrada value={matricula} onChange={(e) => setMatricula(e.target.value.replace(/\D/g, ''))} inputMode="numeric" autoComplete="username" required autoFocus />
+            <Entrada value={matricula} onChange={(e) => setMatricula(limparMatricula(e.target.value))} inputMode="numeric"
+              maxLength={TAMANHO_MATRICULA} placeholder="4 dígitos" autoComplete="username" required autoFocus />
           </Campo>
           <Campo rotulo="Senha">
             <Entrada type="password" value={senha} onChange={(e) => setSenha(e.target.value)} autoComplete="current-password" required />

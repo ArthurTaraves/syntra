@@ -32,6 +32,8 @@ React + Vite + TypeScript + TailwindCSS (v4, via `@tailwindcss/vite`) + React Ro
 ## Regras (obrigatórias)
 1. **Interface 100% em português do Brasil** (textos, mensagens de erro, rótulos, datas no formato brasileiro).
 2. **TODOS os dados são fictícios.** Nunca usar nomes, CPFs, matrículas ou processos reais. CPF sempre mascarado (ex.: `***.456.789-**`); nunca armazenar CPF completo.
+   - **Matrículas têm exatamente 4 dígitos** (`PADRAO_MATRICULA` em `src/lib/texto.ts`, `matriculaValida` em `firestore.rules`). Contas de demonstração: 1001 (servidor), 1002 (gestor), 1003 (admin), todas com o nome "Camila" e a senha `syntra123`; demais servidores fictícios: 1004–1030.
+   - Ao mudar o formato dos dados fictícios, suba a `VERSAO` em `src/services/local/index.ts` para o navegador descartar o acervo antigo.
 3. **Nunca apagar, sobrescrever, mover ou renomear o `.env`**, nem rodar comandos que possam removê-lo (`git clean -x`, `git clean -fdx`, `git stash -u`, `git stash --all`, `rm -rf` na raiz etc.). Novas variáveis vão para o `.env.example`.
 4. **Componentes de UI nunca acessam o Firebase diretamente** — nada de importar `firebase/*` em `src/pages`, `src/components` ou `src/hooks`. Todo acesso passa por `src/services`, para permitir trocar a implementação por SharePoint/Microsoft Graph no futuro.
 5. Nenhuma chave ou credencial fixa no código: usar `import.meta.env.VITE_*`.

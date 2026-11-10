@@ -4,6 +4,7 @@ import { Carregando, MensagemErro } from '../../components/Estados'
 import { Aviso, Botao, CabecalhoPagina, Campo, Entrada, Modal, Selecao, Tabela } from '../../components/painel/ui'
 import { useContextoAcesso } from '../../hooks/useAuth'
 import { mensagemDeErro, useCarregar } from '../../hooks/useCarregar'
+import { limparMatricula, MSG_MATRICULA_INVALIDA, PADRAO_MATRICULA, TAMANHO_MATRICULA } from '../../lib/texto'
 import { ROTULO_PERFIL, servicos, type NovoUsuario } from '../../services'
 import { LOTACOES, PERFIS, type Perfil } from '../../types'
 
@@ -16,7 +17,7 @@ function FormNovoUsuario({ aoFechar, aoCriar }: { aoFechar: () => void; aoCriar:
   const enviar = async (e: FormEvent) => {
     e.preventDefault()
     if (f.nome.trim().split(' ').length < 2) return setErro('Informe o nome completo.')
-    if (!/^\d{5,10}$/.test(f.matricula)) return setErro('A matrícula deve ter de 5 a 10 dígitos.')
+    if (!PADRAO_MATRICULA.test(f.matricula)) return setErro(MSG_MATRICULA_INVALIDA)
     if (f.senha.length < 6) return setErro('A senha inicial precisa ter pelo menos 6 caracteres.')
     setSalvando(true)
     try {
@@ -32,7 +33,10 @@ function FormNovoUsuario({ aoFechar, aoCriar }: { aoFechar: () => void; aoCriar:
     <Modal titulo="Novo usuário" aoFechar={aoFechar}>
       <form onSubmit={enviar} className="flex flex-col gap-3" noValidate>
         <Campo rotulo="Nome completo"><Entrada value={f.nome} onChange={(e) => setF({ ...f, nome: e.target.value })} autoFocus /></Campo>
-        <Campo rotulo="Matrícula"><Entrada value={f.matricula} inputMode="numeric" onChange={(e) => setF({ ...f, matricula: e.target.value.replace(/\D/g, '') })} /></Campo>
+        <Campo rotulo="Matrícula" dica="Exatamente 4 dígitos.">
+          <Entrada value={f.matricula} inputMode="numeric" maxLength={TAMANHO_MATRICULA} placeholder="0000"
+            onChange={(e) => setF({ ...f, matricula: limparMatricula(e.target.value) })} />
+        </Campo>
         <div className="grid grid-cols-2 gap-3">
           <Campo rotulo="Perfil">
             <Selecao value={f.perfil} onChange={(e) => setF({ ...f, perfil: e.target.value as Perfil })}>

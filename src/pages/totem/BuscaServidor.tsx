@@ -9,7 +9,7 @@ export default function BuscaServidor() {
   return (
     <>
       <TituloTotem titulo="Buscar por matrícula ou nome" subtitulo="Acentos e letras maiúsculas não fazem diferença." />
-      <CampoBuscaTotem rotulo="Matrícula ou nome do servidor" valorInicial={q} modo="alfanumerico" placeholder="Ex.: 1000001 ou Lívia Bastos"
+      <CampoBuscaTotem rotulo="Matrícula ou nome do servidor" valorInicial={q} modo="alfanumerico" placeholder="Ex.: 1004 ou Natália"
         aoBuscar={(v) => setParams({ q: v }, { replace: true })} />
       {q && (
         <ResultadosTotem filtros={{ servidor: q }}

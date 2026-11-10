@@ -4,15 +4,20 @@
 // É usado automaticamente quando o .env do Firebase não está configurado.
 
 import { gerarSeed, SENHA_DEMO, type DadosSeed } from '../../data/seed'
-import { hojeISO, somenteDigitos } from '../../lib/texto'
+import { hojeISO, MSG_MATRICULA_INVALIDA, PADRAO_MATRICULA, somenteDigitos } from '../../lib/texto'
 import type { Documento, LogAcesso, Usuario } from '../../types'
 import { aplicarFiltros } from '../filtros'
 import { podeVerDocumento, podeVerProcesso, podeVerServidor } from '../permissoes'
 import { ErroServico, type Contexto, type DataProvider } from '../tipos'
 
-const CHAVE_DADOS = 'syntra:demo:dados:v1'
-const CHAVE_SENHAS = 'syntra:demo:senhas:v1'
-const CHAVE_SESSAO = 'syntra:demo:sessao'
+// Versão do acervo local. Ao mudar o formato dos dados fictícios (ex.: v2 = matrículas de
+// 4 dígitos e contas "Camila"), suba a versão: o navegador descarta os dados antigos e
+// recarrega o acervo novo automaticamente.
+const VERSAO = 'v2'
+const CHAVE_DADOS = `syntra:demo:dados:${VERSAO}`
+const CHAVE_SENHAS = `syntra:demo:senhas:${VERSAO}`
+const CHAVE_SESSAO = `syntra:demo:sessao:${VERSAO}`
+const CHAVES_ANTIGAS = ['syntra:demo:dados:v1', 'syntra:demo:senhas:v1', 'syntra:demo:sessao']
 
 interface Estado extends DadosSeed {
   senhas: Record<string, string>
@@ -37,6 +42,15 @@ const ls = typeof localStorage !== 'undefined' ? localStorage : undefined
 const ss = typeof sessionStorage !== 'undefined' ? sessionStorage : undefined
 
 function carregarEstado(): Estado {
+  // Remove os dados de versões anteriores (contas e matrículas antigas).
+  try {
+    CHAVES_ANTIGAS.forEach((c) => {
+      ls?.removeItem(c)
+      ss?.removeItem(c)
+    })
+  } catch {
+    /* armazenamento indisponível */
+  }
   const dados = lerJSON<DadosSeed>(ls, CHAVE_DADOS) ?? gerarSeed()
   const senhas =
     lerJSON<Record<string, string>>(ls, CHAVE_SENHAS) ??
@@ -246,6 +260,7 @@ export function criarProviderLocal(): DataProvider {
         exigirAdmin(ctx)
         await espera()
         const matricula = somenteDigitos(dados.matricula)
+        if (!PADRAO_MATRICULA.test(matricula)) throw new ErroServico(MSG_MATRICULA_INVALIDA, 'validacao')
         if (estado.usuarios.some((u) => u.matricula === matricula)) {
           throw new ErroServico('Já existe um usuário com esta matrícula.', 'validacao')
         }

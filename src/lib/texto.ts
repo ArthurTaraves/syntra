@@ -33,6 +33,13 @@ export function mascararProcesso(valor: string): string {
 
 export const PADRAO_PROCESSO = /^\d{5}\.\d{6}\/\d{4}-\d{2}$/
 
+/** Matrícula: exatamente 4 dígitos (o mesmo formato é validado em firestore.rules). */
+export const TAMANHO_MATRICULA = 4
+export const PADRAO_MATRICULA = /^\d{4}$/
+export const MSG_MATRICULA_INVALIDA = 'A matrícula tem 4 dígitos.'
+/** Mantém só dígitos e corta em 4 — usado em todos os campos de matrícula. */
+export const limparMatricula = (v: string) => v.replace(/\D/g, '').slice(0, TAMANHO_MATRICULA)
+
 /** Garante que nunca se exiba um CPF completo, mesmo que um dado chegue sem máscara. */
 export function mascararCpf(cpf: string): string {
   const d = somenteDigitos(cpf)

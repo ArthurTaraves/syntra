@@ -5,12 +5,13 @@
 // 2) Envolve o provedor com o registro automático de LogAcesso (LGPD): toda consulta,
 //    visualização e edição gera log, sem depender de cada tela lembrar de registrar.
 
+import { MSG_MATRICULA_INVALIDA, PADRAO_MATRICULA } from '../lib/texto'
 import type { NovoLog, Usuario } from '../types'
 import { criarProviderFirebase } from './firebase'
 import { firebaseConfigurado } from './firebase/app'
 import { descreverFiltros } from './filtros'
 import { criarProviderLocal } from './local'
-import type { Contexto, DataProvider } from './tipos'
+import { ErroServico, type Contexto, type DataProvider } from './tipos'
 
 function comRegistroDeAcessos(p: DataProvider): DataProvider {
   const registrar = (usuario: Usuario, log: NovoLog) =>
@@ -22,6 +23,8 @@ function comRegistroDeAcessos(p: DataProvider): DataProvider {
     auth: {
       ...p.auth,
       async entrar(matricula, senha, origem) {
+        // Formato inválido não chega ao provedor e não conta como tentativa errada ("validacao").
+        if (!PADRAO_MATRICULA.test(matricula)) throw new ErroServico(MSG_MATRICULA_INVALIDA, 'validacao')
         const u = await p.auth.entrar(matricula, senha, origem)
         await registrar(u, { acao: 'login', alvo: u.uid, origem })
         return u
@@ -85,6 +88,7 @@ function comRegistroDeAcessos(p: DataProvider): DataProvider {
     usuarios: {
       ...p.usuarios,
       async criar(dados, ctx) {
+        if (!PADRAO_MATRICULA.test(dados.matricula)) throw new ErroServico(MSG_MATRICULA_INVALIDA, 'validacao')
         const u = await p.usuarios.criar(dados, ctx)
         void log(ctx, { acao: 'edicao', alvo: u.uid, detalhe: `Usuário criado: ${u.nome} (${u.perfil})`, origem: ctx.origem })
         return u

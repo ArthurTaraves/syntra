@@ -29,6 +29,11 @@ service cloud.firestore {
     function isGestor()   { return temPerfil() && eu().perfil == 'gestor'; }
     function isServidor() { return temPerfil() && eu().perfil == 'servidor'; }
 
+    // Matrícula: exatamente 4 dígitos (mesmo formato de src/lib/texto.ts).
+    function matriculaValida(v) {
+      return v is string && v.matches('^[0-9]{4}$');
+    }
+
     function lotacaoValida(v) {
       return v in ['Superintendência – Teresina', 'Delegacia de Teresina', 'Delegacia de Parnaíba',
                    'Delegacia de Picos', 'Delegacia de Floriano', 'Delegacia de Corrente'];
@@ -41,7 +46,7 @@ service cloud.firestore {
       allow create, update: if isAdmin()
         && request.resource.data.perfil in ['servidor', 'gestor', 'admin']
         && lotacaoValida(request.resource.data.unidade)
-        && request.resource.data.matricula is string
+        && matriculaValida(request.resource.data.matricula)
         // O admin não altera o próprio perfil (evita ficar sem administrador por engano).
         && !(uid == request.auth.uid && request.resource.data.perfil != 'admin');
       allow delete: if false;
@@ -53,6 +58,7 @@ service cloud.firestore {
         || (isGestor() && resource.data.lotacao == eu().unidade)
         || (isServidor() && resource.data.matricula == eu().matricula);
       allow create, update: if isAdmin()
+        && matriculaValida(request.resource.data.matricula)
         && lotacaoValida(request.resource.data.lotacao)
         // LGPD: nunca guardar CPF completo — só o campo mascarado, no formato ***.000.000-**
         && !('cpf' in request.resource.data)
@@ -66,6 +72,7 @@ service cloud.firestore {
       return d.keys().hasAll(['titulo', 'tipo', 'numeroProcesso', 'matriculaServidor', 'lotacao',
                               'dataDocumento', 'localizacaoFisica', 'status', 'nivelAcesso'])
         && d.numeroProcesso.matches('^[0-9]{5}[.][0-9]{6}/[0-9]{4}-[0-9]{2}$')
+        && matriculaValida(d.matriculaServidor)
         && d.status in ['Ativo', 'Arquivado', 'Em tramitação']
         && d.nivelAcesso in ['publico-interno', 'restrito', 'sigiloso']
         && lotacaoValida(d.lotacao)

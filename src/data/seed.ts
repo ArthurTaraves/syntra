@@ -42,13 +42,15 @@ const isoDia = (d: Date) => `${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.g
 
 // ---------------------------------------------------------------------------
 // Contas de demonstração (também listadas no README)
+// Matrículas têm exatamente 4 dígitos. As três contas se chamam "Camila";
+// o perfil exibido ao lado do nome diferencia cada uma.
 // ---------------------------------------------------------------------------
 export const SENHA_DEMO = 'syntra123'
 
 export const CONTAS_DEMO: Usuario[] = [
-  { uid: 'demo-servidor', nome: 'Lívia Andrade Bastos', matricula: '1000001', perfil: 'servidor', unidade: 'Delegacia de Teresina' },
-  { uid: 'demo-gestor', nome: 'Caio Mendonça Tavares', matricula: '1000002', perfil: 'gestor', unidade: 'Delegacia de Parnaíba' },
-  { uid: 'demo-admin', nome: 'Helena Prado Siqueira', matricula: '1000003', perfil: 'admin', unidade: 'Superintendência – Teresina' },
+  { uid: 'demo-servidor', nome: 'Camila', matricula: '1001', perfil: 'servidor', unidade: 'Delegacia de Teresina' },
+  { uid: 'demo-gestor', nome: 'Camila', matricula: '1002', perfil: 'gestor', unidade: 'Delegacia de Parnaíba' },
+  { uid: 'demo-admin', nome: 'Camila', matricula: '1003', perfil: 'admin', unidade: 'Superintendência – Teresina' },
 ]
 
 const PRENOMES = [
@@ -127,6 +129,13 @@ export function gerarSeed(agora: Date = new Date()): DadosSeed {
   // ---------------- Servidores (30) ----------------
   const servidores: Servidor[] = []
   const nomesUsados = new Set(CONTAS_DEMO.map((c) => c.nome))
+  // Homônimos (mesmo primeiro e último nome) recebem a matrícula no e-mail.
+  const emailsUsados = new Set<string>()
+  const emailUnico = (base: string, matricula: string) => {
+    const email = `${emailsUsados.has(base) ? `${base}.${matricula}` : base}@exemplo.syntra.local`
+    emailsUsados.add(base)
+    return email
+  }
   for (let i = 0; i < 30; i++) {
     const demo = CONTAS_DEMO[i]
     let nome = demo?.nome
@@ -137,12 +146,15 @@ export function gerarSeed(agora: Date = new Date()): DadosSeed {
         nome = n
       }
     }
-    const matricula = String(1000001 + i)
-    const login = nome
+    // 1001–1003: contas de demonstração; 1004–1030: demais servidores (4 dígitos).
+    const matricula = String(1001 + i)
+    const partes = nome
       .normalize('NFD')
       .replace(/[̀-ͯ]/g, '')
       .toLowerCase()
       .split(' ')
+    // Nome de uma palavra só (as contas "Camila"): usa a matrícula para o e-mail não repetir.
+    const login = partes.length > 1 ? [partes[0], partes[partes.length - 1]] : [partes[0], matricula]
     servidores.push({
       id: `srv-${matricula}`,
       matricula,
@@ -151,7 +163,7 @@ export function gerarSeed(agora: Date = new Date()): DadosSeed {
       lotacao: demo?.unidade ?? LOTACOES_SEED[i % LOTACOES_SEED.length],
       situacao: i < 3 ? 'ativo' : r() < 0.75 ? 'ativo' : pick(['aposentado', 'cedido', 'licença'] as const),
       dataIngresso: dataEntre(1994, 2022),
-      email: `${login[0]}.${login[login.length - 1]}@exemplo.syntra.local`,
+      email: emailUnico(`${login[0]}.${login[1]}`, matricula),
       cpfMascarado: `***.${int(100, 999)}.${int(100, 999)}-**`,
     })
   }

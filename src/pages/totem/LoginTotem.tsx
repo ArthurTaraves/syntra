@@ -8,6 +8,7 @@ import { TecladoVirtual } from '../../components/TecladoVirtual'
 import { useAuth } from '../../hooks/useAuth'
 import { BLOQUEIO_SEGUNDOS, MAX_TENTATIVAS, useBloqueioLogin } from '../../hooks/useBloqueioLogin'
 import { useTelaDeToque } from '../../hooks/useTelaDeToque'
+import { limparMatricula, MSG_MATRICULA_INVALIDA, PADRAO_MATRICULA, TAMANHO_MATRICULA } from '../../lib/texto'
 import { ErroServico } from '../../services'
 
 type Campo = 'matricula' | 'senha'
@@ -57,9 +58,15 @@ export default function LoginTotem() {
   const enviar = async (e?: FormEvent) => {
     e?.preventDefault()
     if (desabilitado) return
-    if (!matricula || !senha) {
-      setErro('Informe a matrícula e a senha.')
-      irPara(!matricula ? 'matricula' : 'senha')
+    // Formato errado não chama o servidor e NÃO conta como tentativa errada.
+    if (!PADRAO_MATRICULA.test(matricula)) {
+      setErro(MSG_MATRICULA_INVALIDA)
+      irPara('matricula')
+      return
+    }
+    if (!senha) {
+      setErro('Informe a senha.')
+      irPara('senha')
       return
     }
     setEnviando(true)
@@ -89,11 +96,18 @@ export default function LoginTotem() {
     }
   }
 
+  /** Avança da matrícula para a senha só se a matrícula tiver 4 dígitos. */
+  const avancarParaSenha = () => {
+    if (!PADRAO_MATRICULA.test(matricula)) return setErro(MSG_MATRICULA_INVALIDA)
+    setErro(null)
+    irPara('senha')
+  }
+
   // Enter na matrícula pula para a senha (em vez de tentar o login com a senha vazia).
   const enterNaMatricula = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
       e.preventDefault()
-      if (matricula) irPara('senha')
+      avancarParaSenha()
     }
   }
 
@@ -125,10 +139,10 @@ export default function LoginTotem() {
           <label className="flex flex-col gap-2">
             <span className="text-xl font-semibold text-marinho-800">Matrícula</span>
             {/* Toque: inputMode "none" impede o teclado do tablet de abrir por cima do nosso. */}
-            <input ref={refMatricula} value={matricula} inputMode={toque ? 'none' : 'numeric'} autoComplete="off" maxLength={10}
+            <input ref={refMatricula} value={matricula} inputMode={toque ? 'none' : 'numeric'} autoComplete="off" maxLength={TAMANHO_MATRICULA}
               enterKeyHint="next" onFocus={() => setCampo('matricula')} onKeyDown={enterNaMatricula}
-              onChange={(e) => setMatricula(e.target.value.replace(/\D/g, ''))}
-              className={classeCampo('matricula')} placeholder="Somente números" disabled={desabilitado} />
+              onChange={(e) => setMatricula(limparMatricula(e.target.value))}
+              className={classeCampo('matricula')} placeholder="4 dígitos" disabled={desabilitado} />
           </label>
 
           <label className="flex flex-col gap-2">
@@ -181,10 +195,10 @@ export default function LoginTotem() {
             <TecladoVirtual
               modo={campo === 'matricula' ? 'numerico' : 'alfanumerico'}
               desabilitado={desabilitado}
-              onTecla={(c) => setValor((v) => (campo === 'matricula' ? (v + c).replace(/\D/g, '').slice(0, 10) : v + c))}
+              onTecla={(c) => setValor((v) => (campo === 'matricula' ? limparMatricula(v + c) : v + c))}
               onApagar={() => setValor((v) => v.slice(0, -1))}
               onLimpar={() => setValor('')}
-              onConfirmar={() => (campo === 'matricula' ? irPara('senha') : enviar())}
+              onConfirmar={() => (campo === 'matricula' ? avancarParaSenha() : enviar())}
               rotuloConfirmar={campo === 'matricula' ? 'Próximo' : 'Entrar'}
             />
             {!toque && (
