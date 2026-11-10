@@ -2,7 +2,9 @@ import {
   BarChart3,
   FileText,
   FolderKanban,
+  Gauge,
   Inbox,
+  UserSearch,
   LayoutDashboard,
   LogOut,
   Menu,
@@ -24,10 +26,12 @@ import { Logo } from '../Logo'
 const ITENS: { para: string; rotulo: string; Icone: LucideIcon; perfis: Perfil[] }[] = [
   { para: '/admin', rotulo: 'Início', Icone: LayoutDashboard, perfis: ['gestor', 'admin'] },
   { para: '/admin/documentos', rotulo: 'Documentos', Icone: FileText, perfis: ['gestor', 'admin'] },
+  { para: '/admin/indicadores', rotulo: 'Indicadores e alertas', Icone: Gauge, perfis: ['gestor', 'admin'] },
+  { para: '/admin/talentos', rotulo: 'Busca de talentos', Icone: UserSearch, perfis: ['gestor', 'admin'] },
   { para: '/admin/servidores', rotulo: 'Fichas dos servidores', Icone: Users, perfis: ['gestor', 'admin'] },
   { para: '/admin/solicitacoes', rotulo: 'Solicitações', Icone: Inbox, perfis: ['gestor', 'admin'] },
   { para: '/admin/processos', rotulo: 'Processos', Icone: FolderKanban, perfis: ['gestor', 'admin'] },
-  { para: '/admin/relatorios', rotulo: 'Relatórios', Icone: BarChart3, perfis: ['gestor', 'admin'] },
+  { para: '/admin/relatorios', rotulo: 'Relatórios do acervo', Icone: BarChart3, perfis: ['gestor', 'admin'] },
   { para: '/admin/logs', rotulo: 'Logs de acesso', Icone: ScrollText, perfis: ['admin'] },
   { para: '/admin/usuarios', rotulo: 'Usuários', Icone: UserCog, perfis: ['admin'] },
 ]

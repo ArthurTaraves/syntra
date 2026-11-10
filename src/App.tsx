@@ -30,6 +30,8 @@ const Relatorios = lazy(() => import('./pages/admin/Relatorios'))
 const Logs = lazy(() => import('./pages/admin/Logs'))
 const Usuarios = lazy(() => import('./pages/admin/Usuarios'))
 const Solicitacoes = lazy(() => import('./pages/admin/Solicitacoes'))
+const Indicadores = lazy(() => import('./pages/admin/Indicadores'))
+const Talentos = lazy(() => import('./pages/admin/Talentos'))
 const Privacidade = lazy(() => import('./pages/Privacidade'))
 const NaoEncontrada = lazy(() => import('./pages/NaoEncontrada'))
 
@@ -70,6 +72,8 @@ export default function App() {
               <Route path="processos/:id" element={<DetalheProcesso />} />
               <Route path="relatorios" element={<Relatorios />} />
               <Route path="solicitacoes" element={<Solicitacoes />} />
+              <Route path="indicadores" element={<Indicadores />} />
+              <Route path="talentos" element={<Talentos />} />
               <Route path="logs" element={<RotaProtegida login="/admin/login" perfis={['admin']}><Logs /></RotaProtegida>} />
               <Route path="usuarios" element={<RotaProtegida login="/admin/login" perfis={['admin']}><Usuarios /></RotaProtegida>} />
             </Route>
