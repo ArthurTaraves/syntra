@@ -15,18 +15,93 @@ export type Lotacao = (typeof LOTACOES)[number]
 export const SITUACOES_SERVIDOR = ['ativo', 'aposentado', 'cedido', 'licença'] as const
 export type SituacaoServidor = (typeof SITUACOES_SERVIDOR)[number]
 
+/** Bloco 2 da ficha: passagem por uma unidade (histórico de transferências). */
+export interface MovimentacaoLotacao {
+  unidade: Lotacao
+  inicio: string
+  /** null = lotação atual. */
+  fim: string | null
+  motivo: string
+}
+
+export const AREAS_CAPACITACAO = ['Operacional', 'Gestão', 'Tecnologia', 'Atendimento', 'Saúde e segurança', 'Jurídica'] as const
+export type AreaCapacitacao = (typeof AREAS_CAPACITACAO)[number]
+
+/** Bloco 4 da ficha: curso ou certificação, opcionalmente com documento anexado no acervo. */
+export interface Capacitacao {
+  id: string
+  nome: string
+  area: AreaCapacitacao
+  cargaHoraria: number
+  instituicao: string
+  dataConclusao: string
+  /** id do Documento (tipo "Capacitação") que comprova o curso, se houver. */
+  documentoId?: string
+}
+
+/**
+ * Ficha do servidor (prontuário ligado à matrícula), com os 5 blocos da proposta:
+ * 1) dados básicos · 2) lotação e movimentações · 3) tempo de serviço e aposentadoria ·
+ * 4) cursos e capacitações · 5) perfil e talentos.
+ */
 export interface Servidor {
   id: string
+  // 1. Dados básicos
   matricula: string
   nome: string
   cargo: string
-  lotacao: Lotacao
   situacao: SituacaoServidor
-  dataIngresso: string
   email: string
   /** Sempre mascarado, ex.: ***.456.789-** — o CPF completo nunca é armazenado. */
   cpfMascarado: string
+  // 2. Lotação e movimentações
+  lotacao: Lotacao
+  historicoLotacoes: MovimentacaoLotacao[]
+  // 3. Tempo de serviço e aposentadoria (cálculo em src/lib/aposentadoria.ts)
+  dataIngresso: string
+  dataNascimento: string
+  /** Tempo de serviço anterior averbado (outros órgãos/INSS), em anos. */
+  tempoAverbadoAnos?: number
+  // 4. Cursos e capacitações
+  capacitacoes: Capacitacao[]
+  // 5. Perfil e talentos
+  competencias: string[]
+  /** Indicações para oportunidades (ex.: Liderança, Instrutoria). */
+  indicacoes: string[]
+  /** Última atualização aprovada da ficha ("atualizada há X meses"). */
+  fichaAtualizadaEm: string
 }
+
+export const INDICACOES = ['Liderança', 'Instrutoria', 'Mentoria', 'Projetos'] as const
+
+// ---------------------------------------------------------------------------
+// Autoatendimento: o servidor envia; gestor da unidade ou RH aprova/recusa.
+// ---------------------------------------------------------------------------
+export const STATUS_SOLICITACAO = ['pendente', 'aprovada', 'recusada'] as const
+export type StatusSolicitacao = (typeof STATUS_SOLICITACAO)[number]
+export type TipoSolicitacao = 'capacitacao' | 'documento'
+
+export interface Solicitacao {
+  id: string
+  tipo: TipoSolicitacao
+  matriculaServidor: string
+  nomeServidor: string
+  lotacao: Lotacao
+  capacitacao?: Omit<Capacitacao, 'id' | 'documentoId'>
+  documento?: { titulo: string; tipo: TipoDocumento; descricao: string }
+  /** Nome do arquivo informado pelo servidor (o armazenamento do arquivo em si entra com o Storage/SharePoint). */
+  nomeArquivo?: string
+  status: StatusSolicitacao
+  criadaEm: string
+  criadaPorUid: string
+  origem: Origem
+  decididaEm?: string
+  decididaPorUid?: string
+  decididaPorNome?: string
+  motivoRecusa?: string
+}
+
+export type NovaSolicitacao = Pick<Solicitacao, 'tipo' | 'capacitacao' | 'documento' | 'nomeArquivo'>
 
 export const TIPOS_DOCUMENTO = [
   'Portaria',
@@ -52,7 +127,7 @@ export interface Documento {
   id: string
   titulo: string
   tipo: TipoDocumento
-  /** Formato SEI fictício: 08665.000123/2024-11 */
+  /** Formato SEI fictício: 08665.000123/2024-11. Vazio ("") = documento sem processo (ex.: autoatendimento). */
   numeroProcesso: string
   matriculaServidor: string
   /** Desnormalizado do servidor: permite busca por nome sem ler a coleção de servidores. */
@@ -66,6 +141,8 @@ export interface Documento {
   palavrasChave: string[]
   urlArquivo?: string
   nivelAcesso: NivelAcesso
+  /** "autoatendimento" = enviado pelo servidor e aprovado pelo gestor/RH. */
+  origemCadastro?: 'painel' | 'autoatendimento'
   criadoPor: string
   criadoEm: string
   atualizadoEm: string

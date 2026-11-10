@@ -68,7 +68,27 @@ function comRegistroDeAcessos(p: DataProvider): DataProvider {
       ...p.servidores,
       async obterPorMatricula(matricula, ctx) {
         const s = await p.servidores.obterPorMatricula(matricula, ctx)
-        if (s) void log(ctx, { acao: 'visualizacao', alvo: s.id, detalhe: `Pasta funcional: ${s.nome}`, origem: ctx.origem })
+        // "Quem acessou esta ficha" (LGPD visível) lê exatamente estes registros.
+        if (s) void log(ctx, { acao: 'visualizacao', alvo: s.id, detalhe: `Ficha: ${s.nome} (${s.matricula})`, origem: ctx.origem })
+        return s
+      },
+    },
+    solicitacoes: {
+      ...p.solicitacoes,
+      async criar(dados, ctx) {
+        const s = await p.solicitacoes.criar(dados, ctx)
+        const oque = s.tipo === 'capacitacao' ? `curso "${s.capacitacao?.nome}"` : `documento "${s.documento?.titulo}"`
+        void log(ctx, { acao: 'edicao', alvo: s.id, detalhe: `Autoatendimento: envio de ${oque}`, origem: ctx.origem })
+        return s
+      },
+      async decidir(id, decisao, motivo, ctx) {
+        const s = await p.solicitacoes.decidir(id, decisao, motivo, ctx)
+        void log(ctx, {
+          acao: 'edicao',
+          alvo: s.id,
+          detalhe: `Autoatendimento: pedido de ${s.nomeServidor} (${s.matriculaServidor}) ${decisao === 'aprovada' ? 'aprovado' : 'recusado'}`,
+          origem: ctx.origem,
+        })
         return s
       },
     },

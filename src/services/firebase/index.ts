@@ -18,14 +18,17 @@ import {
   setDoc,
   updateDoc,
   where,
+  writeBatch,
   type DocumentData,
   type Query,
   type QueryConstraint,
 } from 'firebase/firestore'
 import { hojeISO, mascararProcesso, somenteDigitos } from '../../lib/texto'
-import type { Documento, LogAcesso, Processo, Servidor, Usuario } from '../../types'
+import { contarCompetencias } from '../../lib/rh'
+import type { Documento, LogAcesso, Processo, Servidor, Solicitacao, Usuario } from '../../types'
+import { efeitoDaAprovacao, validarSolicitacao } from '../autoatendimento'
 import { aplicarFiltros } from '../filtros'
-import { NIVEIS_TOTEM, podeVerDocumento } from '../permissoes'
+import { NIVEIS_TOTEM, podeDecidirSolicitacao, podeVerDocumento } from '../permissoes'
 import { ErroServico, type Contexto, type DataProvider, type FiltrosDocumento } from '../tipos'
 import { comAppSecundario, emailDaMatricula, obterFirebase } from './app'
 
@@ -161,6 +164,7 @@ export function criarProviderFirebase(): DataProvider {
         }),
       verificarDuplicidade: (dados, _ctx, ignorarId) =>
         protegido(async () => {
+          if (!somenteDigitos(dados.numeroProcesso)) return [] // sem processo (autoatendimento)
           const s = await getDocs(
             query(
               col('documentos'),
@@ -211,6 +215,98 @@ export function criarProviderFirebase(): DataProvider {
             query(col('servidores'), where('matricula', '==', matricula), ...restricaoPerfil(ctx.usuario, 'matricula'), limit(1)),
           )
           return s.empty ? null : comId<Servidor>(s.docs[0])
+        }),
+      contagemCompetencias: (ctx) =>
+        protegido(async () => {
+          const ref = doc(db, 'estatisticas', 'competencias')
+          if (ctx.usuario.perfil === 'admin') {
+            // O RH lê todas as fichas, recalcula e publica SÓ os números agregados para os gestores.
+            const todos = (await getDocs(col('servidores'))).docs.map((d) => comId<Servidor>(d))
+            const contagem = Object.fromEntries(contarCompetencias(todos))
+            await setDoc(ref, { contagem, atualizadoEm: new Date().toISOString() })
+            return contagem
+          }
+          const snap = await getDoc(ref)
+          return snap.exists() ? (snap.data().contagem as Record<string, number>) : {}
+        }),
+    },
+
+    solicitacoes: {
+      listar: (f, ctx) =>
+        protegido(async () => {
+          const u = ctx.usuario
+          const r: QueryConstraint[] =
+            u.perfil === 'admin' ? [] : u.perfil === 'gestor' ? [where('lotacao', '==', u.unidade)] : [where('matriculaServidor', '==', u.matricula)]
+          if (f.status) r.push(where('status', '==', f.status))
+          if (f.matriculaServidor && u.perfil !== 'servidor') r.push(where('matriculaServidor', '==', f.matriculaServidor))
+          const s = await getDocs(query(col('solicitacoes'), ...r))
+          return s.docs.map((d) => comId<Solicitacao>(d)).sort((a, b) => b.criadaEm.localeCompare(a.criadaEm))
+        }),
+      criar: (dados, ctx) =>
+        protegido(async () => {
+          validarSolicitacao(dados)
+          const u = ctx.usuario
+          const nova: Omit<Solicitacao, 'id'> = {
+            ...dados,
+            matriculaServidor: u.matricula,
+            nomeServidor: u.nome,
+            lotacao: u.unidade,
+            status: 'pendente',
+            criadaEm: new Date().toISOString(),
+            criadaPorUid: u.uid,
+            origem: ctx.origem,
+          }
+          const ref = await addDoc(col('solicitacoes'), nova)
+          return { ...nova, id: ref.id }
+        }),
+      decidir: (id, decisao, motivoRecusa, ctx) =>
+        protegido(async () => {
+          const refSol = doc(db, 'solicitacoes', id)
+          const snap = await getDoc(refSol)
+          if (!snap.exists()) throw new ErroServico('Solicitação não encontrada.', 'nao-encontrado')
+          const sol = comId<Solicitacao>(snap)
+          if (!podeDecidirSolicitacao(ctx.usuario, sol))
+            throw new ErroServico(
+              sol.matriculaServidor === ctx.usuario.matricula
+                ? 'Você não pode decidir o seu próprio pedido. Ele será analisado pelo RH.'
+                : 'Você não tem permissão para decidir esta solicitação.',
+              'permissao',
+            )
+          if (decisao === 'recusada' && !motivoRecusa?.trim()) throw new ErroServico('Informe o motivo da recusa.', 'validacao')
+
+          // Tudo num lote atômico: pedido + ficha + documento entram juntos ou nada entra.
+          const lote = writeBatch(db)
+          const agora = new Date().toISOString()
+          if (decisao === 'aprovada') {
+            const s = await getDocs(
+              query(col('servidores'), where('matricula', '==', sol.matriculaServidor), ...restricaoPerfil(ctx.usuario, 'matricula'), limit(1)),
+            )
+            if (s.empty) throw new ErroServico('Ficha do servidor não encontrada.', 'nao-encontrado')
+            const servidor = comId<Servidor>(s.docs[0])
+            const efeito = efeitoDaAprovacao(sol, servidor)
+            let documentoId: string | undefined
+            if (efeito.documento) {
+              const refDoc = doc(col('documentos'))
+              documentoId = refDoc.id
+              lote.set(refDoc, { ...efeito.documento, criadoPor: ctx.usuario.uid, criadoEm: agora, atualizadoEm: agora })
+            }
+            lote.update(doc(db, 'servidores', servidor.id), {
+              fichaAtualizadaEm: efeito.fichaAtualizadaEm,
+              ...(efeito.capacitacao
+                ? { capacitacoes: arrayUnion({ ...efeito.capacitacao, id: `cap-${servidor.matricula}-${Date.now().toString(36)}`, ...(documentoId ? { documentoId } : {}) }) }
+                : {}),
+            })
+          }
+          const decisaoDados = {
+            status: decisao,
+            decididaEm: agora,
+            decididaPorUid: ctx.usuario.uid,
+            decididaPorNome: ctx.usuario.nome,
+            ...(decisao === 'recusada' ? { motivoRecusa: motivoRecusa!.trim() } : {}),
+          }
+          lote.update(refSol, decisaoDados)
+          await lote.commit()
+          return { ...sol, ...decisaoDados }
         }),
     },
 
@@ -269,6 +365,7 @@ export function criarProviderFirebase(): DataProvider {
           if (f.origem) r.push(where('origem', '==', f.origem))
           if (f.desde) r.push(where('data', '>=', f.desde))
           if (f.ate) r.push(where('data', '<=', f.ate))
+          if (f.alvo) r.push(where('alvo', '==', f.alvo))
           const s = await getDocs(query(col('logs'), ...r, orderBy('data', 'desc'), limit(5000)))
           return s.docs.map((d) => {
             const { registradoEm: _r, ...resto } = d.data()

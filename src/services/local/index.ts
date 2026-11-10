@@ -5,15 +5,18 @@
 
 import { gerarSeed, SENHA_DEMO, type DadosSeed } from '../../data/seed'
 import { hojeISO, MSG_MATRICULA_INVALIDA, PADRAO_MATRICULA, somenteDigitos } from '../../lib/texto'
-import type { Documento, LogAcesso, Usuario } from '../../types'
+import { contarCompetencias } from '../../lib/rh'
+import type { Documento, LogAcesso, Solicitacao, Usuario } from '../../types'
+import { efeitoDaAprovacao, validarSolicitacao } from '../autoatendimento'
 import { aplicarFiltros } from '../filtros'
-import { podeVerDocumento, podeVerProcesso, podeVerServidor } from '../permissoes'
+import { podeDecidirSolicitacao, podeVerDocumento, podeVerProcesso, podeVerServidor, podeVerSolicitacao } from '../permissoes'
 import { ErroServico, type Contexto, type DataProvider } from '../tipos'
 
 // Versão do acervo local. Ao mudar os dados fictícios, suba a versão: o navegador descarta
 // os dados antigos e recarrega o acervo novo automaticamente.
-//   v2 = matrículas de 4 dígitos · v3 = uma única conta de demonstração (Camila, admin)
-const VERSAO = 'v3'
+//   v2 = matrículas de 4 dígitos · v3 = conta única · v4 = proposta oficial (3 contas Camila,
+//   ficha em 5 blocos, solicitações de autoatendimento, cenário de aposentadorias e alertas)
+const VERSAO = 'v4'
 const PREFIXO = 'syntra:demo:'
 const CHAVE_DADOS = `${PREFIXO}dados:${VERSAO}`
 const CHAVE_SENHAS = `${PREFIXO}senhas:${VERSAO}`
@@ -136,6 +139,7 @@ export function criarProviderLocal(): DataProvider {
       async verificarDuplicidade(dados, ctx, ignorarId) {
         exigirAdmin(ctx)
         const proc = somenteDigitos(dados.numeroProcesso)
+        if (!proc) return [] // documentos sem processo (autoatendimento) não entram na checagem
         return clonar(
           estado.documentos.filter(
             (d) =>
@@ -198,6 +202,85 @@ export function criarProviderLocal(): DataProvider {
         const s = estado.servidores.find((x) => x.matricula === matricula)
         return s && podeVerServidor(ctx.usuario, s) ? clonar(s) : null
       },
+      async contagemCompetencias(ctx) {
+        if (ctx.usuario.perfil === 'servidor') throw new ErroServico('Você não tem permissão para esta ação.', 'permissao')
+        // Só números agregados: nenhuma ficha de outra unidade é exposta ao gestor.
+        return Object.fromEntries(contarCompetencias(estado.servidores))
+      },
+    },
+
+    solicitacoes: {
+      async listar(f, ctx) {
+        await espera()
+        return clonar(
+          estado.solicitacoes
+            .filter(
+              (s) =>
+                podeVerSolicitacao(ctx.usuario, s) &&
+                (!f.status || s.status === f.status) &&
+                (!f.matriculaServidor || s.matriculaServidor === f.matriculaServidor),
+            )
+            .sort((a, b) => b.criadaEm.localeCompare(a.criadaEm)),
+        )
+      },
+      async criar(dados, ctx) {
+        validarSolicitacao(dados)
+        await espera()
+        const u = ctx.usuario
+        const servidor = estado.servidores.find((s) => s.matricula === u.matricula)
+        const sol: Solicitacao = {
+          ...dados,
+          id: `sol-${Date.now().toString(36)}`,
+          matriculaServidor: u.matricula,
+          nomeServidor: servidor?.nome ?? u.nome,
+          lotacao: servidor?.lotacao ?? u.unidade,
+          status: 'pendente',
+          criadaEm: new Date().toISOString(),
+          criadaPorUid: u.uid,
+          origem: ctx.origem,
+        }
+        estado.solicitacoes.push(sol)
+        salvar()
+        return clonar(sol)
+      },
+      async decidir(id, decisao, motivoRecusa, ctx) {
+        await espera()
+        const sol = estado.solicitacoes.find((s) => s.id === id)
+        if (!sol) throw new ErroServico('Solicitação não encontrada.', 'nao-encontrado')
+        if (sol.status !== 'pendente') throw new ErroServico('Esta solicitação já foi decidida.', 'validacao')
+        if (!podeDecidirSolicitacao(ctx.usuario, sol))
+          throw new ErroServico(
+            sol.matriculaServidor === ctx.usuario.matricula
+              ? 'Você não pode decidir o seu próprio pedido. Ele será analisado pelo RH.'
+              : 'Você não tem permissão para decidir esta solicitação.',
+            'permissao',
+          )
+        if (decisao === 'recusada' && !motivoRecusa?.trim()) throw new ErroServico('Informe o motivo da recusa.', 'validacao')
+
+        if (decisao === 'aprovada') {
+          const servidor = estado.servidores.find((s) => s.matricula === sol.matriculaServidor)
+          if (!servidor) throw new ErroServico('Ficha do servidor não encontrada.', 'nao-encontrado')
+          const efeito = efeitoDaAprovacao(sol, servidor)
+          const agora = new Date().toISOString()
+          let documentoId: string | undefined
+          if (efeito.documento) {
+            documentoId = `doc-${Date.now().toString(36)}`
+            estado.documentos.push({ ...efeito.documento, id: documentoId, criadoPor: ctx.usuario.uid, criadoEm: agora, atualizadoEm: agora })
+          }
+          if (efeito.capacitacao)
+            servidor.capacitacoes.push({ ...efeito.capacitacao, id: `cap-${servidor.matricula}-${Date.now().toString(36)}`, documentoId })
+          servidor.fichaAtualizadaEm = efeito.fichaAtualizadaEm
+        }
+        Object.assign(sol, {
+          status: decisao,
+          decididaEm: new Date().toISOString(),
+          decididaPorUid: ctx.usuario.uid,
+          decididaPorNome: ctx.usuario.nome,
+          motivoRecusa: decisao === 'recusada' ? motivoRecusa!.trim() : undefined,
+        })
+        salvar()
+        return clonar(sol)
+      },
     },
 
     processos: {
@@ -253,7 +336,8 @@ export function criarProviderLocal(): DataProvider {
                 (!f.desde || l.data >= f.desde) &&
                 (!f.ate || l.data <= f.ate) &&
                 (!f.origem || l.origem === f.origem) &&
-                (!f.acao || l.acao === f.acao),
+                (!f.acao || l.acao === f.acao) &&
+                (!f.alvo || l.alvo === f.alvo),
             )
             .sort((a, b) => b.data.localeCompare(a.data)),
         )

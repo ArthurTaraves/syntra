@@ -1,4 +1,4 @@
-import type { Documento, NivelAcesso, Origem, Perfil, Processo, Servidor, Usuario } from '../types'
+import type { Documento, NivelAcesso, Origem, Perfil, Processo, Servidor, Solicitacao, Usuario } from '../types'
 
 // Regras de perfil do app. As MESMAS regras estão em firestore.rules (servidor),
 // porque o front-end nunca pode ser a única proteção.
@@ -39,10 +39,27 @@ export const podeMovimentarProcesso = (u: Usuario, p: Processo) =>
 export const podeVerLogs = (u: Usuario | null) => u?.perfil === 'admin'
 export const podeGerenciarUsuarios = (u: Usuario | null) => u?.perfil === 'admin'
 
+/** Ver pedidos de autoatendimento: o próprio servidor, o gestor da unidade ou o RH. */
+export function podeVerSolicitacao(u: Usuario, s: Solicitacao): boolean {
+  if (u.perfil === 'admin') return true
+  if (u.perfil === 'gestor' && s.lotacao === u.unidade) return true
+  return s.matriculaServidor === u.matricula
+}
+
+/** Decidir: RH qualquer pedido; gestor só da própria unidade e NUNCA o próprio pedido. */
+export function podeDecidirSolicitacao(u: Usuario, s: Solicitacao): boolean {
+  if (s.status !== 'pendente') return false
+  if (u.perfil === 'admin') return true
+  return u.perfil === 'gestor' && s.lotacao === u.unidade && s.matriculaServidor !== u.matricula
+}
+
+/** Painel de indicadores, alertas e talentos: gestor (sua unidade) e RH. */
+export const podeVerIndicadores = (u: Usuario | null) => u?.perfil === 'gestor' || u?.perfil === 'admin'
+
 export const ROTULO_PERFIL: Record<Perfil, string> = {
   servidor: 'Servidor',
-  gestor: 'Gestor',
-  admin: 'Administrador',
+  gestor: 'Gestor de unidade',
+  admin: 'RH / administrador',
 }
 
 export const ROTULO_NIVEL: Record<NivelAcesso, string> = {
