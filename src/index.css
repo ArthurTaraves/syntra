@@ -43,3 +43,19 @@ body,
 body {
   @apply bg-fundo text-marinho-950 antialiased;
 }
+
+/* Impressão do extrato da ficha (totem): folha A4, sem fundo colorido. */
+@media print {
+  @page {
+    size: A4;
+    margin: 14mm;
+  }
+  html,
+  body {
+    background: #fff !important;
+  }
+  .extrato {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}

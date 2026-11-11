@@ -39,7 +39,8 @@ export default function Privacidade() {
             <li><strong>Ficha do servidor</strong>: lotação e histórico de movimentações, data de nascimento e de ingresso (para a previsão de aposentadoria), cursos e capacitações, competências e indicações para oportunidades.</li>
             <li><strong>Metadados de documentos e processos</strong>: título, tipo, número do processo, datas, status e localização física do arquivo.</li>
             <li><strong>Atualizações enviadas pelo próprio servidor</strong> (autoatendimento) e a decisão do gestor ou do RH.</li>
-            <li><strong>Registros de acesso</strong>: quem consultou, visualizou ou alterou cada informação, quando e de onde (totem ou painel).</li>
+            <li><strong>Registros de acesso</strong>: quem consultou, visualizou, alterou ou imprimiu cada informação, quando e de onde (totem ou painel).</li>
+            <li><strong>Extratos emitidos</strong>: código de verificação, nome, matrícula, data de emissão e quais seções foram impressas.</li>
           </ul>
         </Secao>
 
@@ -55,9 +56,8 @@ export default function Privacidade() {
 
         <Secao titulo="Quem pode acessar">
           <ul>
-            <li><strong>Servidor</strong>: só a própria ficha; envia atualizações para aprovação. Vê também os próprios documentos e os de nível “público interno”.</li>
-            <li><strong>Gestor de unidade</strong>: só as fichas e os documentos dos servidores da sua unidade; aprova as atualizações da unidade (nunca o próprio pedido).</li>
-            <li><strong>RH / administrador</strong>: vê e edita tudo, incluindo os registros de acesso e o cadastro de usuários.</li>
+            <li><strong>No totem (Área do servidor)</strong>: qualquer pessoa, de qualquer perfil, consulta <strong>apenas a própria ficha</strong>, os próprios documentos e processos, e envia atualizações para aprovação.</li>
+            <li><strong>No painel do RH (computador)</strong>: o <strong>gestor de unidade</strong> vê só os servidores da sua unidade e aprova as atualizações deles (nunca o próprio pedido); o <strong>RH / administrador</strong> vê e edita tudo, incluindo os registros de acesso e o cadastro de usuários.</li>
             <li>Documentos <strong>sigilosos</strong> nunca aparecem no totem; só são acessados no painel administrativo por perfis autorizados.</li>
           </ul>
           <p>As mesmas regras são aplicadas no servidor de dados, e não apenas na tela.</p>
@@ -68,6 +68,15 @@ export default function Privacidade() {
             <li>Cada acesso a uma ficha fica registrado (quem, quando e de onde), e o RH vê esse histórico na própria ficha.</li>
             <li>Relatórios e indicadores agregados <strong>não mostram grupos com menos de 5 pessoas</strong>, para que ninguém possa ser identificado.</li>
             <li>Previsões de aposentadoria são estimativas por regra simplificada e não substituem a análise oficial do RH.</li>
+          </ul>
+        </Secao>
+
+        <Secao titulo="Impressão e verificação do extrato">
+          <ul>
+            <li>No totem, cada pessoa pode imprimir um <strong>extrato da própria ficha</strong>, escolhendo as seções. O <strong>CPF nunca é impresso</strong>.</li>
+            <li>O extrato é <strong>informativo, sem valor de declaração oficial</strong>, e traz data, hora e um código de verificação com QR code.</li>
+            <li>Cada impressão fica registrada no log de acessos.</li>
+            <li>Na página pública <strong>/verificar</strong>, quem tem o código vê apenas: se o extrato é válido, nome, matrícula, data de emissão e seções impressas. Não é possível listar extratos nem ver outros dados da ficha.</li>
           </ul>
         </Secao>
 

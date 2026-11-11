@@ -3,11 +3,16 @@ import type { Documento, NivelAcesso, Origem, Perfil, Processo, Servidor, Solici
 // Regras de perfil do app. As MESMAS regras estão em firestore.rules (servidor),
 // porque o front-end nunca pode ser a única proteção.
 
+// ORGANIZAÇÃO EM DUAS ÁREAS (docs/PROPOSTA.md):
+//  - TOTEM ("Área do servidor"): QUALQUER perfil vê só o que é da PRÓPRIA matrícula
+//    (gestor e RH também são policiais e consultam a própria ficha ali).
+//  - PAINEL ("Site do RH"): gestor vê a própria unidade; RH vê tudo.
+
 /** Níveis que podem aparecer no totem: sigiloso nunca é exibido lá. */
 export const NIVEIS_TOTEM: NivelAcesso[] = ['publico-interno', 'restrito']
 
 export function podeVerDocumento(usuario: Usuario, doc: Documento, origem: Origem): boolean {
-  if (origem === 'totem' && doc.nivelAcesso === 'sigiloso') return false
+  if (origem === 'totem') return doc.matriculaServidor === usuario.matricula && doc.nivelAcesso !== 'sigiloso'
   switch (usuario.perfil) {
     case 'admin':
       return true
@@ -21,13 +26,14 @@ export function podeVerDocumento(usuario: Usuario, doc: Documento, origem: Orige
   }
 }
 
-export function podeVerProcesso(usuario: Usuario, p: Processo): boolean {
+export function podeVerProcesso(usuario: Usuario, p: Processo, origem: Origem = 'painel'): boolean {
+  if (origem === 'totem' || usuario.perfil === 'servidor') return p.matriculaServidor === usuario.matricula
   if (usuario.perfil === 'admin') return true
-  if (usuario.perfil === 'gestor') return p.lotacao === usuario.unidade
-  return p.matriculaServidor === usuario.matricula
+  return p.lotacao === usuario.unidade
 }
 
-export function podeVerServidor(usuario: Usuario, s: Servidor): boolean {
+export function podeVerServidor(usuario: Usuario, s: Servidor, origem: Origem = 'painel'): boolean {
+  if (origem === 'totem') return s.matricula === usuario.matricula
   if (usuario.perfil === 'admin') return true
   if (usuario.perfil === 'gestor') return s.lotacao === usuario.unidade
   return s.matricula === usuario.matricula

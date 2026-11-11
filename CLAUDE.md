@@ -9,6 +9,13 @@ Protótipo acadêmico (projeto integrador SENAI) para a **Superintendência Regi
 ## Problema (resumo da PROPOSTA)
 Informações dos servidores espalhadas em 9 sistemas/sites e planilhas sem padrão; tempo de serviço, lotação, competências, capacitações e aposentadoria cruzados à mão; sem banco de talentos.
 
+## Organização em duas áreas (decisão registrada na PROPOSTA)
+- **Totem = "Área do servidor"** (`/totem`): **qualquer perfil vê só a PRÓPRIA ficha**. Menu igual para todos: Minha ficha · Meus documentos e processos · Enviar curso ou documento · Minhas solicitações · Imprimir extrato da ficha. **Não colocar no totem** busca de outros servidores, busca avançada, fichas de terceiros nem aprovação de pedidos; rotas desconhecidas do totem redirecionam ao menu.
+  - A regra "só a própria matrícula no totem" fica na **camada de serviços** (`permissoes.ts` com `origem === 'totem'`, e `restricaoPerfil(..., origem)` no Firebase), não só nas telas.
+  - Extrato: seções escolhidas, A4 (`@media print`), código `SYN-XXXX-XXXX` + QR para `/verificar/CODIGO`, sem CPF, log `impressao`; coleção `extratos` guarda só campos de verificação (`src/services/extratos.ts`).
+- **Site do RH = painel** (`/admin`): só gestor (própria unidade) e RH (tudo), no computador. Tudo que cruza dados fica aqui: fichas, busca por matrícula/nome e por nº de processo, talentos, indicadores e alertas, solicitações, documentos, processos, relatórios, logs, usuários.
+- Páginas públicas: `/privacidade` e `/verificar/:codigo`.
+
 ## Solução (resumo da PROPOSTA)
 - Sistema único em que tudo fica ligado à **matrícula** (prontuário), no computador e num **totem** (touch, área interna, login obrigatório).
 - **Ficha do servidor em 5 blocos**: dados básicos · lotação e movimentações · tempo de serviço e aposentadoria · cursos e capacitações (com documentos) · perfil e talentos. Selo "Ficha atualizada há X meses".
@@ -38,7 +45,7 @@ React + Vite + TypeScript + TailwindCSS (v4, via `@tailwindcss/vite`) + React Ro
    - **Matrículas têm exatamente 4 dígitos** (`PADRAO_MATRICULA` em `src/lib/texto.ts`, `matriculaValida` em `firestore.rules`).
    - **Três contas de demonstração, todas com o nome "Camila"** e senha `syntra123` (uma por perfil, conforme a PROPOSTA): **1001 = servidor** (Delegacia de Teresina), **1002 = gestor** (Delegacia de Parnaíba), **1003 = RH/admin** (Superintendência). Demais servidores fictícios: 1004–1030.
    - O cenário fictício é intencional (Parnaíba e Corrente em vermelho, Superintendência e Picos em amarelo, Teresina e Floriano em verde; pedidos pendentes em Parnaíba). Ao mexer no quadro de `src/data/seed.ts`, preserve esse cenário.
-   - Ao mudar os dados fictícios, suba a `VERSAO` em `src/services/local/index.ts` (atual: `v4`) para o navegador descartar o acervo antigo.
+   - Ao mudar os dados fictícios, suba a `VERSAO` em `src/services/local/index.ts` (atual: `v5`) para o navegador descartar o acervo antigo.
 3. **Nunca apagar, sobrescrever, mover ou renomear o `.env`**, nem rodar comandos que possam removê-lo (`git clean -x`, `git clean -fdx`, `git stash -u`, `git stash --all`, `rm -rf` na raiz etc.). Novas variáveis vão para o `.env.example`.
 4. **Componentes de UI nunca acessam o Firebase diretamente** — nada de importar `firebase/*` em `src/pages`, `src/components` ou `src/hooks`. Todo acesso passa por `src/services`.
 5. Nenhuma chave ou credencial fixa no código: usar `import.meta.env.VITE_*`.

@@ -4,6 +4,9 @@ rules_version = '2';
 // (src/services/permissoes.ts), aplicadas no servidor. O front-end nunca é a única proteção.
 // Especificação: docs/PROPOSTA.md ("LGPD funcionando no back-end, não só na tela").
 //
+// Duas áreas: TOTEM ("Área do servidor": cada um vê só a própria ficha — aplicado na camada de
+// serviços) e PAINEL ("Site do RH"). As regras abaixo são o limite máximo de cada perfil.
+//
 // Perfis (coleção "usuarios/{uid}", campo "perfil"):
 //   servidor → só a PRÓPRIA ficha; envia atualizações (autoatendimento) para aprovação;
 //              documentos próprios + "publico-interno"; nunca "sigiloso"
@@ -191,12 +194,35 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // ---------- Extratos da ficha (impressos no totem) ----------
+    // O documento guarda SÓ os campos de verificação (nome, matrícula, data, seções): como o
+    // Firestore não esconde campos num documento legível, nada além disso é gravado.
+    function codigoExtratoValido(c) {
+      return c.matches('^SYN-[A-HJ-KM-NP-Z2-9]{4}-[A-HJ-KM-NP-Z2-9]{4}$');
+    }
+    match /extratos/{codigo} {
+      // Verificação PÚBLICA (página /verificar), só pelo código exato. Listar/enumerar: proibido.
+      allow get: if codigoExtratoValido(codigo);
+      allow list: if false;
+      // Cada um emite extrato SOMENTE da própria ficha.
+      allow create: if temPerfil()
+        && codigoExtratoValido(codigo)
+        && request.resource.data.keys().hasOnly(['matriculaServidor', 'nomeServidor', 'emitidoEm', 'secoes'])
+        && request.resource.data.matriculaServidor == eu().matricula
+        && request.resource.data.nomeServidor is string
+        && request.resource.data.emitidoEm is string
+        && request.resource.data.secoes is list
+        && request.resource.data.secoes.size() > 0
+        && request.resource.data.secoes.hasOnly(['dados', 'lotacao', 'aposentadoria', 'cursos', 'competencias']);
+      allow update, delete: if false;
+    }
+
     // ---------- Logs de acesso (LGPD) ----------
     match /logs/{id} {
       // Qualquer usuário com perfil registra SEUS PRÓPRIOS acessos, com o horário real do servidor.
       allow create: if temPerfil()
         && request.resource.data.uid == request.auth.uid
-        && request.resource.data.acao in ['consulta', 'visualizacao', 'download', 'edicao', 'login', 'logout']
+        && request.resource.data.acao in ['consulta', 'visualizacao', 'download', 'edicao', 'impressao', 'login', 'logout']
         && request.resource.data.origem in ['totem', 'painel']
         && request.resource.data.registradoEm == request.time;
       allow read: if isAdmin();

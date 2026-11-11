@@ -9,6 +9,7 @@ import type {
   AreaCapacitacao,
   Capacitacao,
   Documento,
+  Extrato,
   LogAcesso,
   Lotacao,
   Movimentacao,
@@ -186,6 +187,8 @@ export interface DadosSeed {
   usuarios: Usuario[]
   logs: LogAcesso[]
   solicitacoes: Solicitacao[]
+  /** Extratos emitidos no totem (começa vazio). */
+  extratos: Extrato[]
 }
 
 /** Gera o acervo fictício. `agora` ancora as datas recentes (cadastros do mês, logs, fichas). */
@@ -472,5 +475,5 @@ export function gerarSeed(agora: Date = new Date()): DadosSeed {
     }
   }
 
-  return { servidores, documentos, processos, usuarios: CONTAS_DEMO, logs, solicitacoes }
+  return { servidores, documentos, processos, usuarios: CONTAS_DEMO, logs, solicitacoes, extratos: [] }
 }

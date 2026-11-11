@@ -18,7 +18,7 @@ export function TotemLogado() {
 
   return (
     <div className="flex min-h-dvh flex-col">
-      <header className="sticky top-0 z-40 bg-marinho-900 text-white shadow-lg">
+      <header className="sticky top-0 z-40 bg-marinho-900 text-white shadow-lg print:hidden">
         <div className="mx-auto flex max-w-[1800px] flex-wrap items-center gap-x-6 gap-y-3 px-4 py-3 sm:px-8">
           <Link to="/totem/menu" aria-label="Menu inicial" className="shrink-0">
             <Logo tamanho="md" />
@@ -46,7 +46,7 @@ export function TotemLogado() {
           </div>
         </div>
       </header>
-      <main className="mx-auto w-full max-w-[1800px] flex-1 px-4 py-6 sm:px-8 sm:py-8">
+      <main className="mx-auto w-full max-w-[1800px] flex-1 px-4 py-6 sm:px-8 sm:py-8 print:p-0">
         <Outlet />
       </main>
     </div>

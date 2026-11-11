@@ -48,18 +48,37 @@ Tudo fica num único arquivo, [`src/config/regrasRH.ts`](src/config/regrasRH.ts)
 - o grupo mínimo para os relatórios;
 - o tempo de saída do totem.
 
-### Totem de consulta (`/totem`)
+### Duas áreas separadas
+| Área | Quem usa | O que se vê |
+|---|---|---|
+| **Totem = Área do servidor** (`/totem`) | Qualquer policial (servidor, gestor e RH também) | **Só a própria ficha** |
+| **Site do RH = painel** (`/admin`), no computador | Gestor de unidade e RH | Gestor: a própria unidade · RH: tudo |
+
+### Totem: Área do servidor (`/totem`)
 - Tela de descanso com data e hora, botão **“Toque para começar”** e link discreto **“Acesso do RH (painel)”**.
 - Login obrigatório, com **matrícula de 4 dígitos** e senha.
   - Na tela de toque, usa um teclado virtual próprio.
   - No computador, aceita o teclado físico.
 - **Bloqueio de 30 s após 5 tentativas erradas.**
-- **Minha ficha**: os 5 blocos, o envio de atualizações e o acompanhamento das próprias solicitações.
-- Busca de documentos por processo, matrícula ou nome, “meus documentos” e busca avançada, com a **localização física em destaque**.
+- **Menu igual para todos os perfis:**
+  - **Minha ficha** (5 blocos, sem CPF);
+  - **Meus documentos e processos** (com a **localização física em destaque** e a linha do tempo dos processos);
+  - **Enviar curso ou documento**;
+  - **Minhas solicitações**;
+  - **Imprimir extrato da ficha**.
+- **Faixa de escopo** abaixo do “Olá”: “Aqui você consulta apenas a sua ficha”. Para gestor e RH, também: “Para gerenciar servidores, use o painel do RH no computador”.
+- **Extrato da ficha:**
+  - o policial escolhe as seções e imprime em **A4**;
+  - sai com cabeçalho da PRF-PI, data e hora e o aviso “Documento informativo, sem valor de declaração oficial”;
+  - leva um **código de verificação** (ex.: SYN-7K4Q-2M9X) e um **QR code**;
+  - **sem CPF**;
+  - cada impressão fica registrada no log.
+- **Verificação pública** em `/verificar/CODIGO`: mostra se o extrato é válido, nome, matrícula, data e seções impressas.
 - **Saída automática após 2 minutos sem uso**, com contagem regressiva nos últimos 15 s. O botão **Sair** fica sempre visível.
 - O cabeçalho mostra o nome e o perfil. Documentos **sigilosos nunca aparecem no totem**.
 
-### Painel (`/admin`): gestor de unidade e RH
+### Site do RH: painel (`/admin`), gestor de unidade e RH
+A busca por **matrícula ou nome** fica em “Fichas dos servidores”. A busca por **nº de processo**, com ou sem pontuação, fica em “Processos” e “Documentos”.
 | Aba | Gestor | RH |
 |---|:-:|:-:|
 | **Indicadores e alertas** | ✔ (sua unidade) | ✔ |
@@ -83,9 +102,9 @@ Tudo fica num único arquivo, [`src/config/regrasRH.ts`](src/config/regrasRH.ts)
 
 | Perfil | O que vê e faz |
 |---|---|
-| **Servidor** | Só a **própria ficha**; envia atualizações para aprovação. Vê também os próprios documentos e os de nível público interno, nunca os sigilosos. Usa o totem (ou o totem no navegador do computador). |
-| **Gestor de unidade** | Só os servidores da **própria unidade**; **aprova atualizações** da unidade (nunca o próprio pedido). Totem e painel. |
-| **RH / administrador** | **Vê e edita tudo**, incluindo logs, usuários e cadastro de documentos. Totem e painel. |
+| **Servidor** | No totem: só a **própria ficha**, os próprios documentos e processos; envia atualizações para aprovação e imprime o extrato. Não acessa o painel. |
+| **Gestor de unidade** | No painel: só os servidores da **própria unidade**; **aprova atualizações** da unidade (nunca o próprio pedido). No totem: só a própria ficha, como qualquer policial. |
+| **RH / administrador** | No painel: **vê e edita tudo**, incluindo logs, usuários e cadastro de documentos. No totem: só a própria ficha. |
 
 ## Contas de demonstração
 

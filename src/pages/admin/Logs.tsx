@@ -10,7 +10,7 @@ import { ACOES_LOG, type AcaoLog, type LogAcesso, type Origem } from '../../type
 
 const POR_PAGINA = 25
 const ROTULO_ACAO: Record<AcaoLog, string> = {
-  consulta: 'Consulta', visualizacao: 'Visualização', download: 'Download/arquivo', edicao: 'Edição', login: 'Login', logout: 'Logout',
+  consulta: 'Consulta', visualizacao: 'Visualização', download: 'Download/arquivo', edicao: 'Edição', impressao: 'Impressão de extrato', login: 'Login', logout: 'Logout',
 }
 
 function exportarCSV(logs: LogAcesso[]) {

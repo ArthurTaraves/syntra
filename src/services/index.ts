@@ -73,6 +73,19 @@ function comRegistroDeAcessos(p: DataProvider): DataProvider {
         return s
       },
     },
+    extratos: {
+      ...p.extratos,
+      async emitir(secoes, ctx) {
+        const e = await p.extratos.emitir(secoes, ctx)
+        void log(ctx, {
+          acao: 'impressao',
+          alvo: e.codigo,
+          detalhe: `Extrato da ficha (${e.secoes.length} ${e.secoes.length === 1 ? 'seção' : 'seções'})`,
+          origem: ctx.origem,
+        })
+        return e
+      },
+    },
     solicitacoes: {
       ...p.solicitacoes,
       async criar(dados, ctx) {

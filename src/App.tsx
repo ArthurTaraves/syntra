@@ -2,25 +2,18 @@ import { lazy, Suspense } from 'react'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { Carregando } from './components/Estados'
 import { RotaProtegida } from './components/RotaProtegida'
-import { ExigePerfil } from './components/totem/ExigePerfil'
 import { TotemLogado } from './components/totem/TotemLogado'
 import { TotemShell } from './components/totem/TotemShell'
 import { AuthProvider } from './hooks/useAuth'
-import BuscaAvancada from './pages/totem/BuscaAvancada'
-import BuscaProcesso from './pages/totem/BuscaProcesso'
-import BuscaServidor from './pages/totem/BuscaServidor'
 import Descanso from './pages/totem/Descanso'
 import DetalheDocumento from './pages/totem/DetalheDocumento'
+import EnviarAtualizacao from './pages/totem/EnviarAtualizacao'
+import ImprimirExtrato from './pages/totem/ImprimirExtrato'
 import LoginTotem from './pages/totem/LoginTotem'
 import MenuTotem from './pages/totem/MenuTotem'
-import EnviarAtualizacao from './pages/totem/EnviarAtualizacao'
 import MeusDocumentos from './pages/totem/MeusDocumentos'
-import FichaTotem from './pages/totem/FichaTotem'
 import MinhaFicha from './pages/totem/MinhaFicha'
-import PedidosTotem from './pages/totem/PedidosTotem'
-
-/** Telas do totem só para gestor e RH (o servidor vê apenas a própria ficha). */
-const GESTAO = ['gestor', 'admin'] as const
+import MinhasSolicitacoes from './pages/totem/MinhasSolicitacoes'
 
 // O painel (e o recharts) só é baixado quando alguém abre /admin: o totem fica leve.
 const PainelLayout = lazy(() => import('./components/painel/PainelLayout').then((m) => ({ default: m.PainelLayout })))
@@ -39,6 +32,7 @@ const Solicitacoes = lazy(() => import('./pages/admin/Solicitacoes'))
 const Indicadores = lazy(() => import('./pages/admin/Indicadores'))
 const Talentos = lazy(() => import('./pages/admin/Talentos'))
 const Privacidade = lazy(() => import('./pages/Privacidade'))
+const Verificar = lazy(() => import('./pages/Verificar'))
 const NaoEncontrada = lazy(() => import('./pages/NaoEncontrada'))
 
 export default function App() {
@@ -49,26 +43,24 @@ export default function App() {
           <Routes>
             <Route path="/" element={<Navigate to="/totem" replace />} />
 
-            {/* ---------- Modo totem ---------- */}
+            {/* ---------- TOTEM = "Área do servidor": cada pessoa consulta só a PRÓPRIA ficha ---------- */}
             <Route path="/totem" element={<TotemShell />}>
               <Route index element={<Descanso />} />
               <Route path="login" element={<LoginTotem />} />
               <Route element={<RotaProtegida login="/totem/login"><TotemLogado /></RotaProtegida>}>
                 <Route path="menu" element={<MenuTotem />} />
-                <Route path="busca/processo" element={<BuscaProcesso />} />
-                {/* Servidor é redirecionado ao menu nestas telas. */}
-                <Route path="busca/servidor" element={<ExigePerfil perfis={[...GESTAO]}><BuscaServidor /></ExigePerfil>} />
-                <Route path="busca/avancada" element={<ExigePerfil perfis={[...GESTAO]}><BuscaAvancada /></ExigePerfil>} />
-                <Route path="ficha/:matricula" element={<ExigePerfil perfis={[...GESTAO]}><FichaTotem /></ExigePerfil>} />
-                <Route path="pedidos" element={<ExigePerfil perfis={[...GESTAO]}><PedidosTotem /></ExigePerfil>} />
-                <Route path="meus-documentos" element={<MeusDocumentos />} />
                 <Route path="minha-ficha" element={<MinhaFicha />} />
                 <Route path="minha-ficha/enviar" element={<EnviarAtualizacao />} />
+                <Route path="meus-documentos" element={<MeusDocumentos />} />
+                <Route path="solicitacoes" element={<MinhasSolicitacoes />} />
+                <Route path="extrato" element={<ImprimirExtrato />} />
                 <Route path="documento/:id" element={<DetalheDocumento />} />
+                {/* Qualquer rota antiga ou desconhecida do totem (buscas, fichas de outros, pedidos…) volta ao menu. */}
+                <Route path="*" element={<Navigate to="/totem/menu" replace />} />
               </Route>
             </Route>
 
-            {/* ---------- Painel administrativo (gestor e admin) ---------- */}
+            {/* ---------- SITE DO RH = painel (gestor: própria unidade · RH: tudo) ---------- */}
             <Route path="/admin/login" element={<LoginPainel />} />
             <Route path="/admin" element={<RotaProtegida login="/admin/login" perfis={['gestor', 'admin']}><PainelLayout /></RotaProtegida>}>
               <Route index element={<Inicio />} />
@@ -87,7 +79,10 @@ export default function App() {
               <Route path="usuarios" element={<RotaProtegida login="/admin/login" perfis={['admin']}><Usuarios /></RotaProtegida>} />
             </Route>
 
+            {/* ---------- Páginas públicas ---------- */}
             <Route path="/privacidade" element={<Privacidade />} />
+            <Route path="/verificar" element={<Verificar />} />
+            <Route path="/verificar/:codigo" element={<Verificar />} />
             <Route path="*" element={<NaoEncontrada />} />
           </Routes>
         </Suspense>

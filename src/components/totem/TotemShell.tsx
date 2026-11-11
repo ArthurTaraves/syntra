@@ -32,11 +32,11 @@ export function TotemShell() {
   })
 
   return (
-    <div className="totem min-h-dvh bg-fundo text-xl text-marinho-950">
+    <div className="totem min-h-dvh bg-fundo text-xl text-marinho-950 print:min-h-0 print:bg-white">
       <Outlet />
       {restante !== null && (
         <div role="alertdialog" aria-modal="true" aria-labelledby="aviso-sessao"
-          className="fixed inset-0 z-[60] flex items-center justify-center bg-marinho-950/85 p-6">
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-marinho-950/85 p-6 print:hidden">
           <div className="w-full max-w-xl rounded-3xl bg-white p-8 text-center shadow-2xl">
             <p id="aviso-sessao" className="text-3xl font-bold text-marinho-900">
               {usuario ? 'Sua sessão vai encerrar…' : 'Voltando à tela inicial…'}

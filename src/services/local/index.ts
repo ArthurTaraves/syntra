@@ -8,6 +8,7 @@ import { hojeISO, MSG_MATRICULA_INVALIDA, PADRAO_MATRICULA, somenteDigitos } fro
 import { contarCompetencias } from '../../lib/rh'
 import type { Documento, LogAcesso, Solicitacao, Usuario } from '../../types'
 import { efeitoDaAprovacao, validarSolicitacao } from '../autoatendimento'
+import { normalizarCodigo, novoExtrato } from '../extratos'
 import { aplicarFiltros } from '../filtros'
 import { podeDecidirSolicitacao, podeVerDocumento, podeVerProcesso, podeVerServidor, podeVerSolicitacao } from '../permissoes'
 import { ErroServico, type Contexto, type DataProvider } from '../tipos'
@@ -16,7 +17,8 @@ import { ErroServico, type Contexto, type DataProvider } from '../tipos'
 // os dados antigos e recarrega o acervo novo automaticamente.
 //   v2 = matrículas de 4 dígitos · v3 = conta única · v4 = proposta oficial (3 contas Camila,
 //   ficha em 5 blocos, solicitações de autoatendimento, cenário de aposentadorias e alertas)
-const VERSAO = 'v4'
+//   v5 = totem como "Área do servidor" (só a própria ficha) e extratos com código de verificação
+const VERSAO = 'v5'
 const PREFIXO = 'syntra:demo:'
 const CHAVE_DADOS = `${PREFIXO}dados:${VERSAO}`
 const CHAVE_SENHAS = `${PREFIXO}senhas:${VERSAO}`
@@ -193,19 +195,39 @@ export function criarProviderLocal(): DataProvider {
         await espera()
         return clonar(
           estado.servidores
-            .filter((s) => podeVerServidor(ctx.usuario, s))
+            .filter((s) => podeVerServidor(ctx.usuario, s, ctx.origem))
             .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR')),
         )
       },
       async obterPorMatricula(matricula, ctx) {
         await espera()
         const s = estado.servidores.find((x) => x.matricula === matricula)
-        return s && podeVerServidor(ctx.usuario, s) ? clonar(s) : null
+        return s && podeVerServidor(ctx.usuario, s, ctx.origem) ? clonar(s) : null
       },
       async contagemCompetencias(ctx) {
         if (ctx.usuario.perfil === 'servidor') throw new ErroServico('Você não tem permissão para esta ação.', 'permissao')
         // Só números agregados: nenhuma ficha de outra unidade é exposta ao gestor.
         return Object.fromEntries(contarCompetencias(estado.servidores))
+      },
+    },
+
+    extratos: {
+      async emitir(secoes, ctx) {
+        await espera()
+        const servidor = estado.servidores.find((s) => s.matricula === ctx.usuario.matricula)
+        if (!servidor) throw new ErroServico('Ficha não encontrada para a sua matrícula.', 'nao-encontrado')
+        const extrato = novoExtrato(secoes, ctx, servidor.nome)
+        estado.extratos.push(extrato)
+        salvar()
+        return clonar(extrato)
+      },
+      async verificar(codigo) {
+        await espera()
+        const e = estado.extratos.find((x) => x.codigo === normalizarCodigo(codigo))
+        if (!e) return null
+        // Verificação pública: devolve só os campos de verificação.
+        const { emitidoPorUid: _uid, ...publico } = e
+        return clonar(publico)
       },
     },
 
@@ -287,17 +309,17 @@ export function criarProviderLocal(): DataProvider {
     processos: {
       async listar(ctx) {
         await espera()
-        return clonar(estado.processos.filter((p) => podeVerProcesso(ctx.usuario, p)))
+        return clonar(estado.processos.filter((p) => podeVerProcesso(ctx.usuario, p, ctx.origem)))
       },
       async obterPorId(id, ctx) {
         await espera()
         const p = estado.processos.find((x) => x.id === id)
-        return p && podeVerProcesso(ctx.usuario, p) ? clonar(p) : null
+        return p && podeVerProcesso(ctx.usuario, p, ctx.origem) ? clonar(p) : null
       },
       async obterPorNumero(numero, ctx) {
         const alvo = somenteDigitos(numero)
         const p = estado.processos.find((x) => somenteDigitos(x.numeroProcesso) === alvo)
-        return p && podeVerProcesso(ctx.usuario, p) ? clonar(p) : null
+        return p && podeVerProcesso(ctx.usuario, p, ctx.origem) ? clonar(p) : null
       },
       async adicionarMovimentacao(id, mov, novaSituacao, ctx) {
         await espera()

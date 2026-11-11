@@ -105,6 +105,35 @@ export interface Solicitacao {
 
 export type NovaSolicitacao = Pick<Solicitacao, 'tipo' | 'capacitacao' | 'documento' | 'nomeArquivo'>
 
+// ---------------------------------------------------------------------------
+// Extrato da ficha (impresso pelo próprio policial no totem) e sua verificação pública.
+// ---------------------------------------------------------------------------
+export const SECOES_EXTRATO = ['dados', 'lotacao', 'aposentadoria', 'cursos', 'competencias'] as const
+export type SecaoExtrato = (typeof SECOES_EXTRATO)[number]
+
+export const ROTULO_SECAO_EXTRATO: Record<SecaoExtrato, string> = {
+  dados: 'Dados funcionais',
+  lotacao: 'Lotação e movimentações',
+  aposentadoria: 'Tempo de serviço e previsão de aposentadoria',
+  cursos: 'Cursos e capacitações',
+  competencias: 'Competências',
+}
+
+/**
+ * Registro de um extrato emitido. Guarda SÓ o necessário para a verificação pública
+ * (quem verifica vê exatamente estes campos): nenhum dado da ficha em si.
+ */
+export interface Extrato {
+  /** Código de verificação, ex.: SYN-7K4Q-2M9X (também é o id do registro). */
+  codigo: string
+  matriculaServidor: string
+  nomeServidor: string
+  emitidoEm: string
+  secoes: SecaoExtrato[]
+  /** Só no registro local; no Firestore não é gravado (o documento é legível publicamente). */
+  emitidoPorUid?: string
+}
+
 export const TIPOS_DOCUMENTO = [
   'Portaria',
   'Ofício',
@@ -187,7 +216,7 @@ export interface Usuario {
   unidade: Lotacao
 }
 
-export const ACOES_LOG = ['consulta', 'visualizacao', 'download', 'edicao', 'login', 'logout'] as const
+export const ACOES_LOG = ['consulta', 'visualizacao', 'download', 'edicao', 'impressao', 'login', 'logout'] as const
 export type AcaoLog = (typeof ACOES_LOG)[number]
 
 export type Origem = 'totem' | 'painel'

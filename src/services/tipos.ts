@@ -10,7 +10,9 @@ import type {
   Origem,
   Perfil,
   Processo,
+  Extrato,
   NovaSolicitacao,
+  SecaoExtrato,
   Servidor,
   Solicitacao,
   StatusDocumento,
@@ -138,6 +140,15 @@ export interface DataProvider {
   logs: LogsService
   usuarios: UsuariosService
   solicitacoes: SolicitacoesService
+  extratos: ExtratosService
+}
+
+/** Extrato da própria ficha, impresso no totem, com código de verificação pública. */
+export interface ExtratosService {
+  /** Registra a emissão (sempre da PRÓPRIA ficha do usuário logado) e devolve o código. */
+  emitir(secoes: SecaoExtrato[], ctx: Contexto): Promise<Extrato>
+  /** Consulta pública (sem login): devolve só os campos de verificação, ou null. */
+  verificar(codigo: string): Promise<Extrato | null>
 }
 
 /** Erro com mensagem já em português, pronta para exibir ao usuário. */
