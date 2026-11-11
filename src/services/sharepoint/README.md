@@ -8,10 +8,11 @@ Todas as telas usam apenas `servicos` (de `src/services/index.ts`), que segue o 
 |---|---|---|
 | Firebase (Auth + Firestore) | `src/services/firebase/` | protótipo publicado |
 | Local (navegador) | `src/services/local/` | demonstração sem internet/credenciais |
-| **SharePoint (Microsoft Graph)** | `src/services/sharepoint/` | **implantação na PRF** (não implementado) |
+| **SharePoint (Microsoft Graph)** | `src/services/sharepoint/` | **implantação na PRF** (esqueleto em `index.ts`, não ligado) |
 
-Para implantar na PRF, cria-se `criarProviderSharePoint(): DataProvider` nesta pasta e
-troca-se a escolha em `src/services/index.ts`. O registro automático de logs
+O esqueleto `criarProviderSharePoint(): DataProvider` já está em `index.ts` (cada função só lança
+"Integração SharePoint não configurada") e é escolhido com `VITE_DATA_PROVIDER=sharepoint`.
+Plano completo: [`docs/SHAREPOINT.md`](../../../docs/SHAREPOINT.md). O registro automático de logs
 (`comRegistroDeAcessos`) continua funcionando igual, pois envolve qualquer provedor.
 
 ## Mapeamento das entidades

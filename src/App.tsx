@@ -6,6 +6,8 @@ import { ExigePerfil } from './components/totem/ExigePerfil'
 import { TotemLogado } from './components/totem/TotemLogado'
 import { TotemShell } from './components/totem/TotemShell'
 import { AuthProvider } from './hooks/useAuth'
+import SharePointPrevisto from './pages/SharePointPrevisto'
+import { integracaoSharePointPendente } from './services'
 import BuscaServidor from './pages/totem/BuscaServidor'
 import Descanso from './pages/totem/Descanso'
 import DetalheDocumento from './pages/totem/DetalheDocumento'
@@ -40,6 +42,10 @@ const Verificar = lazy(() => import('./pages/Verificar'))
 const NaoEncontrada = lazy(() => import('./pages/NaoEncontrada'))
 
 export default function App() {
+  // VITE_DATA_PROVIDER=sharepoint antes da integração existir: tela explicativa em vez de erro
+  // (nenhuma rota é montada, então nada chama o provedor).
+  if (integracaoSharePointPendente) return <SharePointPrevisto />
+
   return (
     <BrowserRouter>
       <AuthProvider>

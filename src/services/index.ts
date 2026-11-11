@@ -1,7 +1,7 @@
 // Ponto de entrada da camada de dados. As telas importam SOMENTE daqui.
 //
-// 1) Escolhe o provedor: Firebase (quando o .env está configurado) ou local (demonstração).
-//    No futuro, basta acrescentar o provedor SharePoint/Microsoft Graph (ver sharepoint/README.md).
+// 1) Escolhe o provedor: Firebase (quando o .env está configurado), local (demonstração) ou
+//    SharePoint (VITE_DATA_PROVIDER=sharepoint; hoje só um esqueleto — ver docs/SHAREPOINT.md).
 // 2) Envolve o provedor com o registro automático de LogAcesso (LGPD): toda consulta,
 //    visualização e edição gera log, sem depender de cada tela lembrar de registrar.
 
@@ -11,6 +11,7 @@ import { criarProviderFirebase } from './firebase'
 import { firebaseConfigurado } from './firebase/app'
 import { descreverFiltros } from './filtros'
 import { criarProviderLocal } from './local'
+import { criarProviderSharePoint } from './sharepoint'
 import { ErroServico, type Contexto, type DataProvider } from './tipos'
 
 function comRegistroDeAcessos(p: DataProvider): DataProvider {
@@ -136,11 +137,23 @@ function comRegistroDeAcessos(p: DataProvider): DataProvider {
 
 const escolha = import.meta.env.VITE_DATA_PROVIDER || (firebaseConfigurado ? 'firebase' : 'local')
 
-export const servicos: DataProvider = comRegistroDeAcessos(
-  escolha === 'firebase' ? criarProviderFirebase() : criarProviderLocal(),
-)
+function criarProvider(): DataProvider {
+  switch (escolha) {
+    case 'firebase':
+      return criarProviderFirebase()
+    case 'sharepoint':
+      return criarProviderSharePoint()
+    default:
+      return criarProviderLocal()
+  }
+}
+
+export const servicos: DataProvider = comRegistroDeAcessos(criarProvider())
 
 export const modoDemonstracao = servicos.nome === 'local'
+
+/** SharePoint escolhido mas ainda não implementado: o App mostra a tela "integração prevista". */
+export const integracaoSharePointPendente = servicos.nome === 'sharepoint'
 
 export { restaurarDadosDemonstracao } from './local'
 export { aplicarFiltros, descreverFiltros } from './filtros'

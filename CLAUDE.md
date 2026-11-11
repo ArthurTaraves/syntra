@@ -31,7 +31,7 @@ O mesmo site no computador e no totem; o que cada um vê depende do nível da ma
 React + Vite + TypeScript + TailwindCSS (v4, via `@tailwindcss/vite`) + React Router + Firebase (Auth e Firestore) + lucide-react. Deploy na Vercel.
 
 ## Estrutura
-- `docs/PROPOSTA.md` — especificação oficial
+- `docs/PROPOSTA.md` — especificação oficial · `docs/SHAREPOINT.md` — plano de integração com o SharePoint (correspondência de listas, login, permissões, implantação, diagrama)
 - `src/config/regrasRH.ts` — **único** arquivo de regras configuráveis: aposentadoria (idade e tempo mínimos), horizonte de 5 anos, competência rara, limites do alerta, grupo mínimo de privacidade (5), ficha desatualizada (12 meses), tempo do totem (2 min / aviso 15 s)
 - `src/lib/rh.ts` — regras de negócio puras (aposentadoria, alertas, talentos, privacidade, "atualizada há X meses")
 - `src/pages` — telas (rotas) · `src/components` — UI reutilizável (`ficha/FichaBlocos.tsx` = os 5 blocos)
@@ -39,7 +39,7 @@ React + Vite + TypeScript + TailwindCSS (v4, via `@tailwindcss/vite`) + React Ro
   - `tipos.ts` — contrato `DataProvider`; `index.ts` — escolhe o provedor e envolve tudo com o registro automático de `LogAcesso`
   - `permissoes.ts` — regras de perfil; **devem ficar idênticas às de `firestore.rules`** (mudou uma, mude a outra)
   - `autoatendimento.ts` — validação dos pedidos e o que muda na ficha ao aprovar (compartilhado pelos provedores)
-  - `firebase/` — implementação Firebase · `local/` — modo demonstração no navegador · `sharepoint/` — caminho de migração
+  - `firebase/` — implementação Firebase · `local/` — modo demonstração no navegador · `sharepoint/` — **esqueleto não ligado**: cada função lança "Integração SharePoint não configurada" e comenta a chamada Graph prevista. `VITE_DATA_PROVIDER=sharepoint` faz o `App.tsx` mostrar a tela `SharePointPrevisto` (ver `docs/SHAREPOINT.md`)
 - Telas que buscam dados recebem um `Contexto` (`useContextoAcesso('totem' | 'painel')`). Não registre logs manualmente para consulta/visualização/edição: o wrapper em `services/index.ts` já faz isso.
 - `src/types` — tipos de domínio · `src/hooks` — hooks · `src/data` — dados fictícios (seed)
 

@@ -5,7 +5,7 @@ Protótipo acadêmico · Superintendência Regional da Polícia Rodoviária Fede
 
 > ⚠️ **Todos os dados do protótipo são fictícios.** Nomes, matrículas, CPFs, datas e números de processo foram inventados.
 >
-> 📄 A especificação oficial está em [`docs/PROPOSTA.md`](docs/PROPOSTA.md).
+> 📄 A especificação oficial está em [`docs/PROPOSTA.md`](docs/PROPOSTA.md). A preparação para o SharePoint está em [`docs/SHAREPOINT.md`](docs/SHAREPOINT.md).
 
 ---
 
@@ -142,7 +142,7 @@ Acesse http://localhost:5173. **Sem nenhuma configuração**, o sistema roda em 
    ```bash
    npm run seed
    ```
-5. `npm run dev`. Com o `.env` preenchido, o sistema passa a usar o Firebase automaticamente (ou force com `VITE_DATA_PROVIDER=firebase|local`).
+5. `npm run dev`. Com o `.env` preenchido, o sistema passa a usar o Firebase automaticamente (ou force com `VITE_DATA_PROVIDER=firebase|local`; `sharepoint` mostra a tela de integração prevista, veja [`docs/SHAREPOINT.md`](docs/SHAREPOINT.md)).
 
 ### Comandos
 | Comando | O que faz |
@@ -185,7 +185,7 @@ src/
 │   ├── permissoes.ts   regras de perfil (espelhadas em firestore.rules)
 │   ├── firebase/       implementação Firebase Auth + Firestore
 │   ├── local/          implementação no navegador (modo demonstração)
-│   └── sharepoint/     README do caminho de migração (Microsoft Graph)
+│   └── sharepoint/     esqueleto do provedor SharePoint (Microsoft Graph), não ligado
 ├── types/        tipos de domínio (Servidor, Documento, Processo, Usuario, LogAcesso)
 ├── data/         seed.ts: gerador de dados fictícios
 └── lib/          normalização de texto, máscaras, datas
@@ -197,9 +197,10 @@ src/
 Na implantação real na PRF, os dados passam para o **Microsoft SharePoint** do Microsoft 365 institucional:
 - documentos → **biblioteca de documentos** com colunas de metadados; servidores, processos e logs → **listas**;
 - login → **Microsoft Entra ID** (MSAL), com perfis definidos por grupos;
-- basta implementar `criarProviderSharePoint()` seguindo o mesmo `DataProvider`. **Nenhuma tela muda.**
+- o provedor já existe como esqueleto em `src/services/sharepoint/index.ts` (cada função só lança "Integração SharePoint não configurada"); basta implementá-lo seguindo o mesmo `DataProvider`. **As telas não mudam.**
+- com `VITE_DATA_PROVIDER=sharepoint`, o site mostra "Integração com SharePoint prevista para a implantação na PRF" em vez de quebrar.
 
-Detalhes e o mapeamento de cada operação para a Graph API: [`src/services/sharepoint/README.md`](src/services/sharepoint/README.md).
+📄 Plano completo (por que SharePoint, correspondência de listas e colunas, login, permissões por grupo, passo a passo e diagrama): [`docs/SHAREPOINT.md`](docs/SHAREPOINT.md).
 
 ## Relação com os Objetivos de Desenvolvimento Sustentável (ONU)
 

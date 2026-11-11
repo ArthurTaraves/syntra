@@ -147,7 +147,7 @@ export interface ExtratosService {
 }
 
 /** Erro com mensagem já em português, pronta para exibir ao usuário. */
-export type CodigoErro = 'credenciais' | 'permissao' | 'nao-encontrado' | 'validacao' | 'rede' | 'desconhecido'
+export type CodigoErro = 'credenciais' | 'permissao' | 'nao-encontrado' | 'validacao' | 'rede' | 'nao-configurado' | 'desconhecido'
 
 export class ErroServico extends Error {
   codigo: CodigoErro
