@@ -68,11 +68,13 @@ O mesmo sistema roda no computador (teclado e mouse) e no totem (toque); só mud
   - **Enviar curso ou documento**;
   - **Minhas solicitações**;
   - **Imprimir extrato da ficha**.
-- **Só para RH / Gestão**, numa seção à parte do menu:
+- **Menu do RH / Gestão**: a seção **“Gestão de pessoas”** vem primeiro, logo abaixo do “Olá”, em destaque amarelo, e cabe sem rolar no totem vertical (1080×1920) e horizontal (1920×1080):
+  - **Pedidos para aprovar**: com contador grande; aprovar ou recusar com motivo. O próprio pedido não aparece (ninguém aprova o próprio pedido);
   - **Fichas dos servidores**: busca por matrícula (4 dígitos) ou nome, em todas as unidades; ficha em 5 blocos, sem CPF;
-  - **Pedidos para aprovar**: com contador; aprovar ou recusar com motivo. O próprio pedido não aparece (ninguém aprova o próprio pedido);
   - **Abrir painel completo**: vai para `/admin`. Aberto a partir do totem, o painel também encerra após 2 minutos sem uso.
-- **Faixa abaixo do “Olá”**: Policial → “Aqui você consulta a sua ficha”. RH / Gestão → “Você também pode consultar e aprovar todos os servidores da PRF-PI”.
+
+  Abaixo, a seção **“Minha ficha pessoal”** traz as 5 opções do policial em cards compactos.
+- **Faixa abaixo do “Olá”**: Policial → “Aqui você consulta a sua ficha”. RH / Gestão → “Painel de gestão · X pedidos aguardando sua análise” (ou “Nenhum pedido pendente”).
 - **Extrato da ficha:**
   - o policial escolhe as seções e imprime em **A4**;
   - sai com cabeçalho da PRF-PI, data e hora e o aviso “Documento informativo, sem valor de declaração oficial”;
