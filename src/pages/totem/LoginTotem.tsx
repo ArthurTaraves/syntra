@@ -115,32 +115,33 @@ export default function LoginTotem() {
   }
 
   const classeCampo = (c: Campo) =>
-    `flex min-h-20 w-full items-center rounded-2xl bg-white px-5 text-3xl tracking-wider outline-none ring-4 transition ${
+    `flex min-h-20 w-full items-center rounded-2xl bg-white px-5 text-3xl tracking-wider outline-none ring-4 transition tablet:min-h-16 tablet:text-2xl ${
       campo === c ? 'ring-destaque-500' : 'ring-marinho-100'
     }`
 
   return (
     <div className="flex min-h-dvh flex-col">
-      <header className="flex items-center justify-between gap-4 bg-marinho-900 px-4 py-3 sm:px-8">
+      {/* "tablet:" = só tablet (768–1079 px, em pé ou deitado): login compactado para caber sem rolar. */}
+      <header className="flex items-center justify-between gap-4 bg-marinho-900 px-4 py-3 sm:px-8 tablet:py-2">
         <Logo />
         <button type="button" onClick={() => navigate('/totem')}
-          className="flex min-h-16 items-center gap-2 rounded-2xl bg-marinho-700 px-5 text-xl font-semibold text-white active:bg-marinho-600">
+          className="flex min-h-16 items-center gap-2 rounded-2xl bg-marinho-700 px-5 text-xl font-semibold text-white active:bg-marinho-600 tablet:min-h-14">
           <ArrowLeft className="size-7" aria-hidden /> Voltar
         </button>
       </header>
 
       <main
-        className={`mx-auto flex w-full flex-1 flex-col justify-center gap-6 px-4 py-6 sm:px-8 ${
+        className={`mx-auto flex w-full flex-1 flex-col justify-center gap-6 px-4 py-6 sm:px-8 tablet:gap-4 tablet:py-3 ${
           tecladoVisivel ? 'max-w-5xl landscape:lg:flex-row landscape:lg:items-center landscape:lg:gap-10' : 'max-w-2xl'
         }`}>
-        <form onSubmit={enviar} className="flex flex-1 flex-col gap-5" noValidate>
+        <form onSubmit={enviar} className="flex flex-1 flex-col gap-5 tablet:gap-3 tablet:landscape:flex-[2]" noValidate>
           <div>
-            <h1 className="text-4xl font-extrabold text-marinho-900">Identifique-se</h1>
-            <p className="text-xl text-marinho-700">Use sua matrícula e senha.</p>
+            <h1 className="text-4xl font-extrabold text-marinho-900 tablet:text-2xl">Identifique-se</h1>
+            <p className="text-xl text-marinho-700 tablet:text-base">Use sua matrícula e senha.</p>
           </div>
 
-          <label className="flex flex-col gap-2">
-            <span className="text-xl font-semibold text-marinho-800">Matrícula</span>
+          <label className="flex flex-col gap-2 tablet:gap-1">
+            <span className="text-xl font-semibold text-marinho-800 tablet:text-lg">Matrícula</span>
             {/* Totem/tablet: inputMode "none" impede o teclado do aparelho de abrir por cima do nosso.
                 Celular: teclado numérico nativo e preenchimento automático da matrícula. */}
             <input ref={refMatricula} value={matricula} inputMode={toque ? 'none' : 'numeric'} pattern="[0-9]*" maxLength={TAMANHO_MATRICULA}
@@ -150,8 +151,8 @@ export default function LoginTotem() {
               className={classeCampo('matricula')} placeholder="4 dígitos" disabled={desabilitado} />
           </label>
 
-          <label className="flex flex-col gap-2">
-            <span className="text-xl font-semibold text-marinho-800">Senha</span>
+          <label className="flex flex-col gap-2 tablet:gap-1">
+            <span className="text-xl font-semibold text-marinho-800 tablet:text-lg">Senha</span>
             <div className="relative">
               {/* Enter aqui envia o formulário (login). */}
               <input ref={refSenha} value={senha} type={verSenha ? 'text' : 'password'} inputMode={toque ? 'none' : 'text'}
@@ -159,7 +160,7 @@ export default function LoginTotem() {
                 onFocus={() => setCampo('senha')} onChange={(e) => setSenha(e.target.value)}
                 className={`${classeCampo('senha')} pr-20`} disabled={desabilitado} />
               <button type="button" onClick={() => setVerSenha((v) => !v)} tabIndex={-1}
-                className="absolute right-2 top-1/2 flex size-16 -translate-y-1/2 items-center justify-center rounded-xl text-marinho-700 active:bg-marinho-50"
+                className="absolute right-2 top-1/2 flex size-16 -translate-y-1/2 items-center justify-center rounded-xl text-marinho-700 active:bg-marinho-50 tablet:size-14"
                 aria-label={verSenha ? 'Ocultar senha' : 'Mostrar senha'}>
                 {verSenha ? <EyeOff className="size-8" /> : <Eye className="size-8" />}
               </button>
@@ -178,13 +179,14 @@ export default function LoginTotem() {
             erro && <MensagemErro grande>{erro}</MensagemErro>
           )}
 
+          {/* No tablet, com o teclado virtual aberto, o "Entrar" do teclado faz o mesmo: o botão grande some para caber sem rolar. */}
           <button type="submit" disabled={desabilitado}
-            className="flex min-h-20 items-center justify-center gap-3 rounded-2xl bg-marinho-800 text-2xl font-bold text-white active:bg-marinho-700 disabled:opacity-50">
+            className={`flex min-h-20 items-center justify-center gap-3 rounded-2xl bg-marinho-800 text-2xl font-bold text-white active:bg-marinho-700 disabled:opacity-50 ${tecladoVisivel ? 'tablet:hidden' : ''}`}>
             {bloqueio.bloqueado ? <Lock className="size-8" aria-hidden /> : <LogIn className="size-8" aria-hidden />}
             {enviando ? 'Entrando…' : 'Entrar'}
           </button>
 
-          <p className="flex items-start gap-2 text-base text-marinho-700">
+          <p className="flex items-start gap-2 text-base text-marinho-700 tablet:text-sm">
             <ShieldCheck className="mt-0.5 size-5 shrink-0 text-marinho-600" aria-hidden />
             O acesso é registrado conforme a LGPD (Lei 13.709/2018).
           </p>
@@ -193,8 +195,8 @@ export default function LoginTotem() {
         </form>
 
         {tecladoVisivel && (
-          <div className="flex flex-1 flex-col justify-center rounded-3xl bg-marinho-50 p-4 portrait:p-6">
-            <p className="mb-3 text-center text-lg font-semibold text-marinho-700 portrait:mb-5 portrait:text-xl">
+          <div className="flex flex-1 flex-col justify-center rounded-3xl bg-marinho-50 p-4 portrait:p-6 tablet:p-3! tablet:landscape:flex-[3]">
+            <p className="mb-3 text-center text-lg font-semibold text-marinho-700 portrait:mb-5 portrait:text-xl tablet:mb-2! tablet:text-base!">
               Digitando: <span className="text-marinho-950">{campo === 'matricula' ? 'Matrícula' : 'Senha'}</span>
             </p>
             <TecladoVirtual
@@ -205,6 +207,7 @@ export default function LoginTotem() {
               onLimpar={() => setValor('')}
               onConfirmar={() => (campo === 'matricula' ? avancarParaSenha() : enviar())}
               rotuloConfirmar={campo === 'matricula' ? 'Próximo' : 'Entrar'}
+              compacto
             />
             {teclado.podeMostrarBotao && (
               <div className="mt-4 flex justify-center">

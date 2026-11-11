@@ -1,5 +1,12 @@
 @import 'tailwindcss';
 
+/*
+ * "tablet:" = tela de toque de tablet (768–1079 px de largura e até 1079 px de altura),
+ * em pé (768x1024) ou deitado (1024x768). Não pega o celular (< 768 px), o totem
+ * (1080x1920 / 1920x1080) nem o computador com mouse. Usado para compactar o login.
+ */
+@custom-variant tablet (@media (pointer: coarse) and (min-width: 768px) and (max-width: 1079px) and (max-height: 1079px));
+
 /* Identidade visual SYNTRA — PRF-PI */
 @theme {
   --color-marinho-950: #06142e;

@@ -9,6 +9,8 @@ interface Props {
   onConfirmar?: () => void
   rotuloConfirmar?: string
   desabilitado?: boolean
+  /** Tablet (variante "tablet:"): teclas de 64 px e espaços menores para o login caber sem rolar. */
+  compacto?: boolean
 }
 
 const LINHAS_ALFA = ['1234567890', 'qwertyuiop', 'asdfghjkl', 'zxcvbnm']
@@ -22,17 +24,19 @@ const LINHAS_ALFA = ['1234567890', 'qwertyuiop', 'asdfghjkl', 'zxcvbnm']
  * então nenhuma tecla tem largura fixa que esprema as outras. `onMouseDown.preventDefault`
  * mantém o foco no campo de texto ativo enquanto se toca nas teclas.
  */
-export function TecladoVirtual({ modo, onTecla, onApagar, onLimpar, onConfirmar, rotuloConfirmar = 'OK', desabilitado }: Props) {
+export function TecladoVirtual({ modo, onTecla, onApagar, onLimpar, onConfirmar, rotuloConfirmar = 'OK', desabilitado, compacto }: Props) {
   const [maiusculas, setMaiusculas] = useState(false)
   const manterFoco = (e: React.MouseEvent) => e.preventDefault()
   // Teclas com no mínimo 56–64 px de altura; na vertical do totem crescem para ~80 px.
-  const base =
-    'flex min-h-14 min-w-0 items-center justify-center rounded-xl font-semibold shadow-sm transition active:scale-95 disabled:opacity-40 select-none touch-manipulation md:min-h-16 portrait:md:min-h-20'
-  const fonteLetra = 'text-xl md:text-2xl portrait:md:text-3xl'
+  const base = `flex min-h-14 min-w-0 items-center justify-center rounded-xl font-semibold shadow-sm transition active:scale-95 disabled:opacity-40 select-none touch-manipulation md:min-h-16 portrait:md:min-h-20 ${
+    compacto ? 'tablet:min-h-16!' : ''
+  }`
+  const fonteLetra = `text-xl md:text-2xl portrait:md:text-3xl ${compacto ? 'tablet:text-2xl!' : ''}`
   const tecla = `${base} ${fonteLetra} bg-white text-marinho-950 ring-1 ring-marinho-100 active:bg-marinho-50`
   const especial = `${base} bg-marinho-100 text-marinho-900 active:bg-marinho-50`
-  // Rótulos de texto ("Limpar", "Entrar"): fonte menor e, em telas estreitas, só o ícone.
-  const rotulo = 'hidden truncate text-lg sm:inline md:text-xl'
+  // Rótulos de texto ("Limpar", "Entrar"): fonte menor e, quando o TECLADO é estreito (menos de
+  // 512 px, medido pelo container, não pela tela), só o ícone — o nome continua no aria-label.
+  const rotulo = 'hidden truncate text-lg @lg:inline md:text-xl'
   const grade20 = 'grid grid-cols-[repeat(20,minmax(0,1fr))] gap-1.5 sm:gap-2'
 
   const botaoLimpar = (classe = '') =>
@@ -64,6 +68,7 @@ export function TecladoVirtual({ modo, onTecla, onApagar, onLimpar, onConfirmar,
 
   if (modo === 'numerico') {
     return (
+      <div className="@container w-full">
       <div className="mx-auto grid w-full max-w-md grid-cols-3 gap-2 sm:gap-3 portrait:md:max-w-xl" role="group" aria-label="Teclado numérico">
         {'123456789'.split('').map((n) => (
           <button key={n} type="button" onMouseDown={manterFoco} onClick={() => onTecla(n)} disabled={desabilitado} className={tecla}>
@@ -77,11 +82,13 @@ export function TecladoVirtual({ modo, onTecla, onApagar, onLimpar, onConfirmar,
         {botaoApagar()}
         {onConfirmar && botaoConfirmar('col-span-3')}
       </div>
+      </div>
     )
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-4xl flex-col gap-1.5 sm:gap-2 portrait:md:gap-3" role="group" aria-label="Teclado alfanumérico">
+    <div className="@container w-full">
+    <div className={`mx-auto flex w-full max-w-4xl flex-col gap-1.5 sm:gap-2 portrait:md:gap-3 ${compacto ? 'tablet:gap-2!' : ''}`} role="group" aria-label="Teclado alfanumérico">
       {LINHAS_ALFA.map((linha, i) => (
         <div key={linha} className={grade20}>
           {/* Linha "asdfghjkl" (9 teclas = 18 colunas): recuo de meia tecla de cada lado. */}
@@ -113,6 +120,7 @@ export function TecladoVirtual({ modo, onTecla, onApagar, onLimpar, onConfirmar,
         </button>
         {botaoConfirmar('col-span-6')}
       </div>
+    </div>
     </div>
   )
 }
