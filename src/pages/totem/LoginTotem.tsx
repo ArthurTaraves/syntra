@@ -7,7 +7,7 @@ import { Logo } from '../../components/Logo'
 import { TecladoVirtual } from '../../components/TecladoVirtual'
 import { useAuth } from '../../hooks/useAuth'
 import { BLOQUEIO_SEGUNDOS, MAX_TENTATIVAS, useBloqueioLogin } from '../../hooks/useBloqueioLogin'
-import { useTelaDeToque } from '../../hooks/useTelaDeToque'
+import { useTecladoVirtual } from '../../hooks/useTelaDeToque'
 import { limparMatricula, MSG_MATRICULA_INVALIDA, PADRAO_MATRICULA, TAMANHO_MATRICULA } from '../../lib/texto'
 import { ErroServico } from '../../services'
 
@@ -17,16 +17,19 @@ export default function LoginTotem() {
   const { usuario, entrar } = useAuth()
   const navigate = useNavigate()
   const bloqueio = useBloqueioLogin()
-  const toque = useTelaDeToque()
+  // Totem/tablet: teclado virtual · celular: teclado nativo · computador: teclado físico.
+  const teclado = useTecladoVirtual()
+  // "toque" aqui = usa o teclado virtual próprio (campos com inputMode "none", sem foco automático).
+  const toque = teclado.virtual
   const [matricula, setMatricula] = useState('')
   const [senha, setSenha] = useState('')
   const [campo, setCampo] = useState<Campo>('matricula')
   const [verSenha, setVerSenha] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
   const [enviando, setEnviando] = useState(false)
-  // null = segue o padrão do aparelho (toque: visível; computador: escondido).
-  const [tecladoEscolhido, setTecladoEscolhido] = useState<boolean | null>(null)
-  const tecladoVisivel = tecladoEscolhido ?? toque
+  // Computador com tela grande: o usuário pode mostrar o teclado virtual pelo botão.
+  const [tecladoEscolhido, setTecladoEscolhido] = useState(false)
+  const tecladoVisivel = teclado.virtual || (teclado.podeMostrarBotao && tecladoEscolhido)
 
   const refMatricula = useRef<HTMLInputElement>(null)
   const refSenha = useRef<HTMLInputElement>(null)
@@ -37,7 +40,7 @@ export default function LoginTotem() {
     ;(c === 'matricula' ? refMatricula : refSenha).current?.focus()
   }
 
-  // Computador: foco automático na matrícula ao abrir a tela.
+  // Computador e celular: foco automático na matrícula ao abrir a tela.
   useEffect(() => {
     if (!toque) refMatricula.current?.focus()
   }, [toque])
@@ -138,8 +141,10 @@ export default function LoginTotem() {
 
           <label className="flex flex-col gap-2">
             <span className="text-xl font-semibold text-marinho-800">Matrícula</span>
-            {/* Toque: inputMode "none" impede o teclado do tablet de abrir por cima do nosso. */}
-            <input ref={refMatricula} value={matricula} inputMode={toque ? 'none' : 'numeric'} autoComplete="off" maxLength={TAMANHO_MATRICULA}
+            {/* Totem/tablet: inputMode "none" impede o teclado do aparelho de abrir por cima do nosso.
+                Celular: teclado numérico nativo e preenchimento automático da matrícula. */}
+            <input ref={refMatricula} value={matricula} inputMode={toque ? 'none' : 'numeric'} pattern="[0-9]*" maxLength={TAMANHO_MATRICULA}
+              name="matricula" autoComplete={teclado.nativo ? 'username' : 'off'}
               enterKeyHint="next" onFocus={() => setCampo('matricula')} onKeyDown={enterNaMatricula}
               onChange={(e) => setMatricula(limparMatricula(e.target.value))}
               className={classeCampo('matricula')} placeholder="4 dígitos" disabled={desabilitado} />
@@ -150,7 +155,7 @@ export default function LoginTotem() {
             <div className="relative">
               {/* Enter aqui envia o formulário (login). */}
               <input ref={refSenha} value={senha} type={verSenha ? 'text' : 'password'} inputMode={toque ? 'none' : 'text'}
-                autoComplete="off" enterKeyHint="go"
+                name="senha" autoComplete={teclado.nativo ? 'current-password' : 'off'} enterKeyHint="go"
                 onFocus={() => setCampo('senha')} onChange={(e) => setSenha(e.target.value)}
                 className={`${classeCampo('senha')} pr-20`} disabled={desabilitado} />
               <button type="button" onClick={() => setVerSenha((v) => !v)} tabIndex={-1}
@@ -184,7 +189,7 @@ export default function LoginTotem() {
             O acesso é registrado conforme a LGPD (Lei 13.709/2018).
           </p>
 
-          {!toque && !tecladoVisivel && <BotaoMostrarTeclado visivel={false} aoAlternar={() => setTecladoEscolhido(true)} />}
+          {teclado.podeMostrarBotao && !tecladoVisivel && <BotaoMostrarTeclado visivel={false} aoAlternar={() => setTecladoEscolhido(true)} />}
         </form>
 
         {tecladoVisivel && (
@@ -201,7 +206,7 @@ export default function LoginTotem() {
               onConfirmar={() => (campo === 'matricula' ? avancarParaSenha() : enviar())}
               rotuloConfirmar={campo === 'matricula' ? 'Próximo' : 'Entrar'}
             />
-            {!toque && (
+            {teclado.podeMostrarBotao && (
               <div className="mt-4 flex justify-center">
                 <BotaoMostrarTeclado visivel aoAlternar={() => setTecladoEscolhido(false)} />
               </div>

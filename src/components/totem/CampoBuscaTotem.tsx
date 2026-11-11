@@ -1,6 +1,6 @@
 import { Keyboard, Search } from 'lucide-react'
 import { useEffect, useRef, useState, type FormEvent } from 'react'
-import { useTelaDeToque } from '../../hooks/useTelaDeToque'
+import { useTecladoVirtual } from '../../hooks/useTelaDeToque'
 import { BotaoMostrarTeclado } from '../BotaoMostrarTeclado'
 import { TecladoVirtual } from '../TecladoVirtual'
 
@@ -16,11 +16,13 @@ interface Props {
 
 /**
  * Campo de busca grande. Enter (teclado físico) ou "Buscar" fazem a busca.
- * - Toque: teclado virtual abre ao tocar no campo e recolhe depois da busca.
+ * - Totem/tablet: teclado virtual abre ao tocar no campo e recolhe depois da busca.
+ * - Celular: teclado nativo do aparelho, sem teclado virtual.
  * - Computador: teclado virtual escondido, foco automático no campo; pode ser mostrado por um botão.
  */
 export function CampoBuscaTotem({ rotulo, valorInicial, modo, placeholder, formatar = (v) => v, aoBuscar }: Props) {
-  const toque = useTelaDeToque()
+  const teclado = useTecladoVirtual()
+  const toque = teclado.virtual
   const [valor, setValor] = useState(valorInicial)
   const [tecladoAberto, setTecladoAberto] = useState(toque && !valorInicial)
   const ref = useRef<HTMLInputElement>(null)
@@ -60,8 +62,8 @@ export function CampoBuscaTotem({ rotulo, valorInicial, modo, placeholder, forma
           </button>
         </div>
       </div>
-      {!toque && <BotaoMostrarTeclado visivel={tecladoAberto} aoAlternar={() => setTecladoAberto((a) => !a)} />}
-      {tecladoAberto && (
+      {teclado.podeMostrarBotao && <BotaoMostrarTeclado visivel={tecladoAberto} aoAlternar={() => setTecladoAberto((a) => !a)} />}
+      {tecladoAberto && (toque || teclado.podeMostrarBotao) && (
         <div className="rounded-3xl bg-marinho-50 p-4">
           <TecladoVirtual modo={modo}
             onTecla={(c) => atualizar(valor + c)}

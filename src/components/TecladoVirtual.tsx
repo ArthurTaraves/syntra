@@ -1,4 +1,4 @@
-import { ArrowBigUp, Check, Delete, Space } from 'lucide-react'
+import { ArrowBigUp, Check, Delete, Eraser, Space } from 'lucide-react'
 import { useState } from 'react'
 
 interface Props {
@@ -14,94 +14,104 @@ interface Props {
 const LINHAS_ALFA = ['1234567890', 'qwertyuiop', 'asdfghjkl', 'zxcvbnm']
 
 /**
- * Teclado virtual próprio do totem: não depende do teclado do sistema operacional.
- * Todas as teclas têm no mínimo 64px de altura. `onMouseDown.preventDefault` mantém o
- * foco no campo de texto ativo enquanto se toca nas teclas.
+ * Teclado virtual próprio do totem/tablet (só aparece em tela de toque com 768 px ou mais;
+ * a regra está em useTecladoVirtual). Não depende do teclado do sistema operacional.
+ *
+ * Layout robusto para qualquer largura: cada linha é uma grade de 20 colunas iguais
+ * (minmax(0, 1fr)). Cada letra ocupa 2 colunas (1 tecla) e Shift/Apagar ocupam 3 (1,5 tecla),
+ * então nenhuma tecla tem largura fixa que esprema as outras. `onMouseDown.preventDefault`
+ * mantém o foco no campo de texto ativo enquanto se toca nas teclas.
  */
 export function TecladoVirtual({ modo, onTecla, onApagar, onLimpar, onConfirmar, rotuloConfirmar = 'OK', desabilitado }: Props) {
   const [maiusculas, setMaiusculas] = useState(false)
   const manterFoco = (e: React.MouseEvent) => e.preventDefault()
-  // Na vertical (totem 1080x1920) as teclas crescem para ~80px e a fonte aumenta.
+  // Teclas com no mínimo 56–64 px de altura; na vertical do totem crescem para ~80 px.
   const base =
-    'min-h-16 portrait:min-h-20 rounded-xl text-2xl portrait:text-3xl font-semibold shadow-sm transition active:scale-95 disabled:opacity-40 select-none touch-manipulation'
-  const tecla = `${base} bg-white text-marinho-950 ring-1 ring-marinho-100 active:bg-marinho-50`
+    'flex min-h-14 min-w-0 items-center justify-center rounded-xl font-semibold shadow-sm transition active:scale-95 disabled:opacity-40 select-none touch-manipulation md:min-h-16 portrait:md:min-h-20'
+  const fonteLetra = 'text-xl md:text-2xl portrait:md:text-3xl'
+  const tecla = `${base} ${fonteLetra} bg-white text-marinho-950 ring-1 ring-marinho-100 active:bg-marinho-50`
   const especial = `${base} bg-marinho-100 text-marinho-900 active:bg-marinho-50`
+  // Rótulos de texto ("Limpar", "Entrar"): fonte menor e, em telas estreitas, só o ícone.
+  const rotulo = 'hidden truncate text-lg sm:inline md:text-xl'
+  const grade20 = 'grid grid-cols-[repeat(20,minmax(0,1fr))] gap-1.5 sm:gap-2'
 
-  const botaoConfirmar = onConfirmar && (
-    <button type="button" onMouseDown={manterFoco} onClick={onConfirmar} disabled={desabilitado}
-      className={`${base} flex items-center justify-center gap-2 bg-destaque-500 text-marinho-950 active:bg-destaque-400`}>
-      <Check className="size-7" aria-hidden /> {rotuloConfirmar}
-    </button>
-  )
-  const botaoApagar = (largura = '') => (
+  const botaoLimpar = (classe = '') =>
+    onLimpar ? (
+      <button type="button" onMouseDown={manterFoco} onClick={onLimpar} disabled={desabilitado}
+        className={`${especial} gap-2 px-2 ${classe}`} aria-label="Limpar">
+        <Eraser className="size-6 shrink-0 md:size-7" aria-hidden /> <span className={rotulo}>Limpar</span>
+      </button>
+    ) : (
+      <span className={classe} />
+    )
+
+  const botaoConfirmar = (classe = '') =>
+    onConfirmar ? (
+      <button type="button" onMouseDown={manterFoco} onClick={onConfirmar} disabled={desabilitado}
+        className={`${base} gap-2 bg-destaque-500 px-2 text-marinho-950 active:bg-destaque-400 ${classe}`} aria-label={rotuloConfirmar}>
+        <Check className="size-6 shrink-0 md:size-7" aria-hidden /> <span className={rotulo}>{rotuloConfirmar}</span>
+      </button>
+    ) : (
+      <span className={classe} />
+    )
+
+  const botaoApagar = (classe = '') => (
     <button type="button" onMouseDown={manterFoco} onClick={onApagar} disabled={desabilitado}
-      className={`${especial} flex items-center justify-center ${largura}`} aria-label="Apagar">
-      <Delete className="size-8 portrait:size-10" aria-hidden />
+      className={`${especial} ${classe}`} aria-label="Apagar">
+      <Delete className="size-7 md:size-8 portrait:md:size-10" aria-hidden />
     </button>
   )
-  // Shift e Apagar têm a mesma largura fixa e não encolhem.
-  const larguraEspecial = 'w-20 portrait:w-24 shrink-0'
 
   if (modo === 'numerico') {
     return (
-      <div className="mx-auto grid w-full max-w-md grid-cols-3 gap-3 portrait:max-w-xl" role="group" aria-label="Teclado numérico">
+      <div className="mx-auto grid w-full max-w-md grid-cols-3 gap-2 sm:gap-3 portrait:md:max-w-xl" role="group" aria-label="Teclado numérico">
         {'123456789'.split('').map((n) => (
           <button key={n} type="button" onMouseDown={manterFoco} onClick={() => onTecla(n)} disabled={desabilitado} className={tecla}>
             {n}
           </button>
         ))}
-        {onLimpar ? (
-          <button type="button" onMouseDown={manterFoco} onClick={onLimpar} disabled={desabilitado} className={`${especial} text-xl`}>
-            Limpar
-          </button>
-        ) : (
-          <span />
-        )}
+        {botaoLimpar()}
         <button type="button" onMouseDown={manterFoco} onClick={() => onTecla('0')} disabled={desabilitado} className={tecla}>
           0
         </button>
         {botaoApagar()}
-        {botaoConfirmar && <div className="col-span-3 grid">{botaoConfirmar}</div>}
+        {onConfirmar && botaoConfirmar('col-span-3')}
       </div>
     )
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-4xl flex-col gap-2 portrait:gap-3" role="group" aria-label="Teclado alfanumérico">
+    <div className="mx-auto flex w-full max-w-4xl flex-col gap-1.5 sm:gap-2 portrait:md:gap-3" role="group" aria-label="Teclado alfanumérico">
       {LINHAS_ALFA.map((linha, i) => (
-        <div key={linha} className="flex justify-center gap-2">
+        <div key={linha} className={grade20}>
+          {/* Linha "asdfghjkl" (9 teclas = 18 colunas): recuo de meia tecla de cada lado. */}
+          {i === 2 && <span aria-hidden />}
           {i === 3 && (
             <button type="button" onMouseDown={manterFoco} onClick={() => setMaiusculas((m) => !m)} disabled={desabilitado}
-              className={`${especial} flex items-center justify-center ${larguraEspecial} ${maiusculas ? 'bg-destaque-400' : ''}`}
+              className={`${especial} col-span-3 ${maiusculas ? 'bg-destaque-400' : ''}`}
               aria-label="Maiúsculas" aria-pressed={maiusculas}>
-              <ArrowBigUp className="size-8 portrait:size-10" aria-hidden />
+              <ArrowBigUp className="size-7 md:size-8 portrait:md:size-10" aria-hidden />
             </button>
           )}
           {linha.split('').map((c) => {
             const car = maiusculas ? c.toUpperCase() : c
             return (
               <button key={c} type="button" onMouseDown={manterFoco} onClick={() => onTecla(car)} disabled={desabilitado}
-                className={`${tecla} w-full min-w-0 max-w-20 flex-1 portrait:max-w-24`}>
+                className={`${tecla} col-span-2`}>
                 {car}
               </button>
             )
           })}
-          {i === 3 && botaoApagar(larguraEspecial)}
+          {i === 3 && botaoApagar('col-span-3')}
         </div>
       ))}
-      <div className="grid grid-cols-[1fr_3fr_1.5fr] gap-2">
-        {onLimpar ? (
-          <button type="button" onMouseDown={manterFoco} onClick={onLimpar} disabled={desabilitado} className={`${especial} text-xl`}>
-            Limpar
-          </button>
-        ) : (
-          <span />
-        )}
+      <div className={grade20}>
+        {botaoLimpar('col-span-5')}
         <button type="button" onMouseDown={manterFoco} onClick={() => onTecla(' ')} disabled={desabilitado}
-          className={`${tecla} flex items-center justify-center`} aria-label="Espaço">
+          className={`${tecla} col-span-9`} aria-label="Espaço">
           <Space className="size-8" aria-hidden />
         </button>
-        {botaoConfirmar ?? <span />}
+        {botaoConfirmar('col-span-6')}
       </div>
     </div>
   )
