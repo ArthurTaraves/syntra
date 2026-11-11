@@ -20,16 +20,14 @@ import {
   where,
   writeBatch,
   type DocumentData,
-  type Query,
   type QueryConstraint,
 } from 'firebase/firestore'
 import { hojeISO, mascararProcesso, somenteDigitos } from '../../lib/texto'
-import { contarCompetencias } from '../../lib/rh'
-import type { Documento, Extrato, LogAcesso, Origem, Processo, Servidor, Solicitacao, Usuario } from '../../types'
+import type { Documento, Extrato, LogAcesso, Processo, Servidor, Solicitacao, Usuario } from '../../types'
 import { normalizarCodigo, novoExtrato, PADRAO_CODIGO_EXTRATO } from '../extratos'
 import { efeitoDaAprovacao, validarSolicitacao } from '../autoatendimento'
 import { aplicarFiltros } from '../filtros'
-import { NIVEIS_TOTEM, podeDecidirSolicitacao, podeVerDocumento, podeVerProcesso } from '../permissoes'
+import { ehGestao, MSG_PROPRIO_PEDIDO, NIVEIS_TOTEM, podeDecidirSolicitacao, podeVerDocumento, podeVerProcesso } from '../permissoes'
 import { ErroServico, type Contexto, type DataProvider, type FiltrosDocumento } from '../tipos'
 import { comAppSecundario, emailDaMatricula, obterFirebase } from './app'
 
@@ -91,14 +89,11 @@ export function criarProviderFirebase(): DataProvider {
   }
 
   /**
-   * Restrição por perfil (o mesmo critério das regras) para coleções com lotacao/matriculaServidor.
-   * No TOTEM ("Área do servidor") todo perfil fica restrito à própria matrícula.
+   * Restrição por perfil (o mesmo critério das regras) para coleções com matricula/matriculaServidor:
+   * RH / Gestão vê tudo; o Policial, só a própria matrícula (no totem e no computador).
    */
-  function restricaoPerfil(u: Usuario, campoMatricula: 'matricula' | 'matriculaServidor', origem: Origem = 'painel'): QueryConstraint[] {
-    if (origem === 'totem') return [where(campoMatricula, '==', u.matricula)]
-    if (u.perfil === 'admin') return []
-    if (u.perfil === 'gestor') return [where('lotacao', '==', u.unidade)]
-    return [where(campoMatricula, '==', u.matricula)]
+  function restricaoPerfil(u: Usuario, campoMatricula: 'matricula' | 'matriculaServidor'): QueryConstraint[] {
+    return ehGestao(u) ? [] : [where(campoMatricula, '==', u.matricula)]
   }
 
   async function consultarDocumentos(ctx: Contexto, filtros: FiltrosDocumento): Promise<Documento[]> {
@@ -109,27 +104,16 @@ export function criarProviderFirebase(): DataProvider {
       filtros.numeroProcesso && somenteDigitos(filtros.numeroProcesso).length === 17
         ? [where('numeroProcesso', '==', mascararProcesso(filtros.numeroProcesso))]
         : []
-    const mat = filtros.matriculaServidor ? [where('matriculaServidor', '==', filtros.matriculaServidor)] : []
-    const niveis = origem === 'totem' ? [where('nivelAcesso', 'in', NIVEIS_TOTEM)] : []
-    let consultas: Query[]
-    // Totem: qualquer perfil vê só os próprios documentos (nunca sigilosos).
-    if (origem === 'totem') consultas = [query(c, where('matriculaServidor', '==', u.matricula), ...niveis, ...proc)]
-    else if (u.perfil === 'admin') consultas = [query(c, ...niveis, ...mat, ...proc)]
-    else if (u.perfil === 'gestor') consultas = [query(c, where('lotacao', '==', u.unidade), ...niveis, ...mat, ...proc)]
-    else {
-      // Os próprios documentos (nunca sigilosos)...
-      const proprios = query(c, where('matriculaServidor', '==', u.matricula), where('nivelAcesso', 'in', NIVEIS_TOTEM), ...proc)
-      // ...e os de nível público-interno (de qualquer servidor).
-      const publicos = query(c, where('nivelAcesso', '==', 'publico-interno'), ...mat, ...proc)
-      if (filtros.matriculaServidor === u.matricula) consultas = [proprios]
-      else if (filtros.matriculaServidor) consultas = [publicos]
-      else consultas = [proprios, publicos]
-    }
-    const snaps = await Promise.all(consultas.map((q) => getDocs(q)))
-    const mapa = new Map<string, Documento>()
-    snaps.forEach((s) => s.docs.forEach((d) => mapa.set(d.id, comId<Documento>(d))))
+    // Policial: sempre só a própria matrícula, nunca sigilosos. Totem: nunca sigilosos para ninguém.
+    const gestao = ehGestao(u)
+    const matricula = gestao ? filtros.matriculaServidor : u.matricula
+    const mat = matricula ? [where('matriculaServidor', '==', matricula)] : []
+    const niveis = origem === 'totem' || !gestao ? [where('nivelAcesso', 'in', NIVEIS_TOTEM)] : []
+    // Policial pedindo documentos de outra matrícula: nada a buscar.
+    if (!gestao && filtros.matriculaServidor && filtros.matriculaServidor !== u.matricula) return []
+    const snap = await getDocs(query(c, ...mat, ...niveis, ...proc))
     // Defesa em profundidade: reaplica a regra no cliente.
-    return [...mapa.values()].filter((d) => podeVerDocumento(u, d, origem))
+    return snap.docs.map((d) => comId<Documento>(d)).filter((d) => podeVerDocumento(u, d, origem))
   }
 
   return {
@@ -213,28 +197,17 @@ export function criarProviderFirebase(): DataProvider {
     servidores: {
       listar: (ctx) =>
         protegido(async () => {
-          const s = await getDocs(query(col('servidores'), ...restricaoPerfil(ctx.usuario, 'matricula', ctx.origem)))
+          const s = await getDocs(query(col('servidores'), ...restricaoPerfil(ctx.usuario, 'matricula')))
           return s.docs.map((d) => comId<Servidor>(d)).sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
         }),
       obterPorMatricula: (matricula, ctx) =>
         ouNulo(async () => {
+          // Policial pedindo outra matrícula: nem consulta (as regras recusariam).
+          if (!ehGestao(ctx.usuario) && matricula !== ctx.usuario.matricula) return null
           const s = await getDocs(
-            query(col('servidores'), where('matricula', '==', matricula), ...restricaoPerfil(ctx.usuario, 'matricula', ctx.origem), limit(1)),
+            query(col('servidores'), where('matricula', '==', matricula), ...restricaoPerfil(ctx.usuario, 'matricula'), limit(1)),
           )
           return s.empty ? null : comId<Servidor>(s.docs[0])
-        }),
-      contagemCompetencias: (ctx) =>
-        protegido(async () => {
-          const ref = doc(db, 'estatisticas', 'competencias')
-          if (ctx.usuario.perfil === 'admin') {
-            // O RH lê todas as fichas, recalcula e publica SÓ os números agregados para os gestores.
-            const todos = (await getDocs(col('servidores'))).docs.map((d) => comId<Servidor>(d))
-            const contagem = Object.fromEntries(contarCompetencias(todos))
-            await setDoc(ref, { contagem, atualizadoEm: new Date().toISOString() })
-            return contagem
-          }
-          const snap = await getDoc(ref)
-          return snap.exists() ? (snap.data().contagem as Record<string, number>) : {}
         }),
     },
 
@@ -264,10 +237,9 @@ export function criarProviderFirebase(): DataProvider {
       listar: (f, ctx) =>
         protegido(async () => {
           const u = ctx.usuario
-          const r: QueryConstraint[] =
-            u.perfil === 'admin' ? [] : u.perfil === 'gestor' ? [where('lotacao', '==', u.unidade)] : [where('matriculaServidor', '==', u.matricula)]
+          const r: QueryConstraint[] = restricaoPerfil(u, 'matriculaServidor')
           if (f.status) r.push(where('status', '==', f.status))
-          if (f.matriculaServidor && u.perfil !== 'servidor') r.push(where('matriculaServidor', '==', f.matriculaServidor))
+          if (f.matriculaServidor && ehGestao(u)) r.push(where('matriculaServidor', '==', f.matriculaServidor))
           const s = await getDocs(query(col('solicitacoes'), ...r))
           return s.docs.map((d) => comId<Solicitacao>(d)).sort((a, b) => b.criadaEm.localeCompare(a.criadaEm))
         }),
@@ -296,9 +268,7 @@ export function criarProviderFirebase(): DataProvider {
           const sol = comId<Solicitacao>(snap)
           if (!podeDecidirSolicitacao(ctx.usuario, sol))
             throw new ErroServico(
-              sol.matriculaServidor === ctx.usuario.matricula
-                ? 'Você não pode decidir o seu próprio pedido. Ele será analisado pelo RH.'
-                : 'Você não tem permissão para decidir esta solicitação.',
+              sol.matriculaServidor === ctx.usuario.matricula ? MSG_PROPRIO_PEDIDO : 'Você não tem permissão para decidir esta solicitação.',
               'permissao',
             )
           if (decisao === 'recusada' && !motivoRecusa?.trim()) throw new ErroServico('Informe o motivo da recusa.', 'validacao')
@@ -308,7 +278,7 @@ export function criarProviderFirebase(): DataProvider {
           const agora = new Date().toISOString()
           if (decisao === 'aprovada') {
             const s = await getDocs(
-              query(col('servidores'), where('matricula', '==', sol.matriculaServidor), ...restricaoPerfil(ctx.usuario, 'matricula', ctx.origem), limit(1)),
+              query(col('servidores'), where('matricula', '==', sol.matriculaServidor), limit(1)),
             )
             if (s.empty) throw new ErroServico('Ficha do servidor não encontrada.', 'nao-encontrado')
             const servidor = comId<Servidor>(s.docs[0])
@@ -344,7 +314,7 @@ export function criarProviderFirebase(): DataProvider {
     processos: {
       listar: (ctx) =>
         protegido(async () => {
-          const s = await getDocs(query(col('processos'), ...restricaoPerfil(ctx.usuario, 'matriculaServidor', ctx.origem)))
+          const s = await getDocs(query(col('processos'), ...restricaoPerfil(ctx.usuario, 'matriculaServidor')))
           return s.docs.map((d) => comId<Processo>(d))
         }),
       obterPorId: (id, ctx) =>
@@ -352,7 +322,7 @@ export function criarProviderFirebase(): DataProvider {
           const snap = await getDoc(doc(db, 'processos', id))
           if (!snap.exists()) return null
           const p = comId<Processo>(snap)
-          return podeVerProcesso(ctx.usuario, p, ctx.origem) ? p : null
+          return podeVerProcesso(ctx.usuario, p) ? p : null
         }),
       obterPorNumero: (numero, ctx) =>
         ouNulo(async () => {
@@ -360,7 +330,7 @@ export function criarProviderFirebase(): DataProvider {
             query(
               col('processos'),
               where('numeroProcesso', '==', mascararProcesso(numero)),
-              ...restricaoPerfil(ctx.usuario, 'matriculaServidor', ctx.origem),
+              ...restricaoPerfil(ctx.usuario, 'matriculaServidor'),
               limit(1),
             ),
           )

@@ -13,12 +13,13 @@ const VARIANTES: Record<Variante, string> = {
 export function Botao({ variante = 'primario', className = '', ...props }: ButtonHTMLAttributes<HTMLButtonElement> & { variante?: Variante }) {
   return (
     <button type="button" {...props}
-      className={`inline-flex min-h-10 items-center justify-center gap-2 rounded-lg px-4 text-sm font-semibold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-destaque-500 disabled:cursor-not-allowed disabled:opacity-50 ${VARIANTES[variante]} ${className}`} />
+      // Área de toque: 44 px no mouse, 52 px em tela de toque (pointer-coarse), com texto maior.
+      className={`inline-flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-lg px-4 text-sm font-semibold transition pointer-coarse:min-h-13 pointer-coarse:min-w-13 pointer-coarse:px-5 pointer-coarse:text-base focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-destaque-500 disabled:cursor-not-allowed disabled:opacity-50 ${VARIANTES[variante]} ${className}`} />
   )
 }
 
 const classeCampo =
-  'w-full rounded-lg border border-marinho-100 bg-white px-3 py-2 text-sm text-marinho-950 outline-none focus:border-marinho-600 focus:ring-2 focus:ring-marinho-100 aria-[invalid=true]:border-red-500'
+  'w-full min-h-11 rounded-lg border border-marinho-100 bg-white px-3 py-2 text-sm text-marinho-950 pointer-coarse:min-h-13 pointer-coarse:text-base outline-none focus:border-marinho-600 focus:ring-2 focus:ring-marinho-100 aria-[invalid=true]:border-red-500'
 
 export function Campo({ rotulo, erro, dica, children }: { rotulo: string; erro?: string; dica?: string; children: ReactNode }) {
   return (
@@ -87,7 +88,7 @@ export function Modal({ titulo, aoFechar, children, largura = 'max-w-lg' }: { ti
       <div className={`w-full ${largura} max-h-[90dvh] overflow-auto rounded-xl bg-white p-6 shadow-2xl`} onClick={(e) => e.stopPropagation()}>
         <div className="mb-4 flex items-center justify-between gap-4">
           <h2 className="text-lg font-bold text-marinho-900">{titulo}</h2>
-          <button type="button" onClick={aoFechar} className="rounded-lg p-1 text-marinho-700 hover:bg-marinho-50" aria-label="Fechar">
+          <button type="button" onClick={aoFechar} className="flex size-11 shrink-0 items-center justify-center rounded-lg text-marinho-700 hover:bg-marinho-50 active:bg-marinho-50" aria-label="Fechar">
             <X className="size-5" />
           </button>
         </div>
@@ -99,8 +100,9 @@ export function Modal({ titulo, aoFechar, children, largura = 'max-w-lg' }: { ti
 
 export function Tabela({ children }: { children: ReactNode }) {
   return (
-    <div className="overflow-x-auto rounded-xl bg-white shadow-sm ring-1 ring-marinho-100">
-      <table className="w-full min-w-[720px] text-left text-sm [&_td]:px-4 [&_td]:py-3 [&_th]:px-4 [&_th]:py-3 [&_th]:font-semibold [&_thead]:bg-marinho-50 [&_thead]:text-marinho-900 [&_tbody_tr]:border-t [&_tbody_tr]:border-marinho-50 [&_tbody_tr:hover]:bg-fundo">
+    // Rolagem horizontal (arrastar com o dedo) quando a tela for mais estreita que a tabela.
+    <div className="overflow-x-auto overscroll-x-contain rounded-xl bg-white shadow-sm ring-1 ring-marinho-100" tabIndex={0} role="region" aria-label="Tabela (role para os lados se necessário)">
+      <table className="w-full min-w-[720px] text-left text-sm pointer-coarse:text-base [&_a]:pointer-coarse:inline-flex [&_a]:pointer-coarse:min-h-11 [&_a]:pointer-coarse:items-center [&_td]:px-4 [&_td]:py-3 [&_th]:px-4 [&_th]:py-3 [&_th]:font-semibold [&_thead]:bg-marinho-50 [&_thead]:text-marinho-900 [&_tbody_tr]:border-t [&_tbody_tr]:border-marinho-50 [&_tbody_tr:hover]:bg-fundo">
         {children}
       </table>
     </div>

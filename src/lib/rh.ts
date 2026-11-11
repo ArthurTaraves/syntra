@@ -118,7 +118,7 @@ export function contarCompetencias(servidores: Servidor[]): Map<string, number> 
 
 /**
  * Cruza previsão de aposentadoria com competências.
- * `servidores`: as fichas visíveis (o gestor só vê a sua unidade).
+ * `servidores`: as fichas consideradas (o RH / Gestão vê todas as unidades).
  * `contagemGlobal`: quantas pessoas têm cada competência em TODA a Superintendência
  * (número agregado, sem nomes) — é o que define se uma competência é rara.
  */

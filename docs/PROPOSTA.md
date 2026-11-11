@@ -35,6 +35,24 @@ mais agilidade e menos retrabalho.
 
 ## A solução proposta
 Um sistema único em que tudo fica ligado à matrícula do servidor, como um prontuário.
+"Servidor" aqui é o funcionário da própria PRF (policial ou administrativo). O sistema
+NÃO trata de cidadãos, multas ou veículos.
+
+UM ÚNICO SITE, usado no computador (teclado e mouse) e no totem (toque). É o mesmo
+sistema; só muda o tamanho e o formato da tela. O que cada pessoa vê depende do
+nível de acesso da sua matrícula:
+
+1. Policial (servidor): em qualquer aparelho, vê só a própria ficha, imprime o extrato,
+   envia cursos/documentos e acompanha os próprios pedidos.
+2. Gestor de unidade: tudo do policial + fichas dos servidores da própria unidade e
+   aprovação de pedidos da unidade.
+3. RH / superintendência: tudo do gestor, para todas as unidades + indicadores e alertas,
+   banco de talentos, relatórios, documentos, processos, logs e usuários.
+
+O RH trabalha principalmente no computador. Quando um gestor ou alguém da
+superintendência visita uma unidade, faz login no totem com a própria matrícula e
+acessa as funções do seu nível (consultar fichas, aprovar pedidos, abrir o painel
+completo) sem depender de um computador.
 
 ### Ficha do servidor (5 blocos)
 1. Dados básicos: nome, matrícula, cargo e informações funcionais.
@@ -59,54 +77,35 @@ O sistema precisa ter um fluxo claro de atualização para não ficar desatualiz
    mostra "atualizada há X meses".
 4. LGPD visível: registro de quem acessou cada ficha e quando; relatórios agregados não
    mostram grupos pequenos (menos de 5 pessoas) para não identificar ninguém.
+5. Extrato impresso com verificação: no totem, o policial imprime um extrato da própria
+   ficha (seções à escolha), com código de verificação e QR code. Qualquer pessoa confere
+   a autenticidade em /verificar/CODIGO. É um documento informativo, sem valor de
+   declaração oficial, e reduz os pedidos ao RH.
 
 O argumento de inovação: trazer recursos de planejamento que hoje só existem em
 sistemas de RH caros, numa solução simples e de baixo custo, feita para a PRF-PI.
 
 ## Perfis de acesso
-- RH / administrador: vê e edita tudo (no painel do RH).
-- Gestor de unidade: vê só os servidores da própria unidade e aprova atualizações (no painel do RH).
-- Servidor: vê a própria ficha e envia atualizações para aprovação (no totem).
-- No totem, gestor e RH usam a "Área do servidor" como qualquer policial: só a própria ficha.
+- RH / administrador: vê e edita tudo, de qualquer unidade.
+- Gestor de unidade: vê só os servidores da própria unidade e aprova os pedidos deles
+  (o próprio pedido do gestor é aprovado pelo RH).
+- Servidor: vê só a própria ficha e envia atualizações para aprovação.
+- As permissões valem igual no computador e no totem.
 
-## Organização em duas áreas (decisão de projeto)
-O sistema tem duas áreas bem separadas:
-
-1. **Totem = "Área do servidor"** (`/totem`): o policial consulta a **própria** ficha.
-   Vale para qualquer perfil (servidor, gestor e RH também são policiais), mas no totem
-   **todos veem só a própria ficha**. Menu igual para todos:
-   - Minha ficha
-   - Meus documentos e processos
-   - Enviar curso ou documento
-   - Minhas solicitações
-   - Imprimir extrato da ficha
-
-   Faixa de aviso: "Aqui você consulta apenas a sua ficha"; para gestor e RH, acrescenta
-   "Para gerenciar servidores, use o painel do RH no computador".
-   **Não há** no totem busca de outros servidores, busca avançada nem aprovação de pedidos.
-2. **Site do RH = painel** (`/admin`): só gestor e RH, no computador. Tudo que é cruzar
-   dados fica aqui: fichas dos servidores, busca por matrícula/nome e por nº de processo,
-   busca de talentos, indicadores e alertas, solicitações (aprovar/recusar), documentos,
-   processos, relatórios, logs e usuários. Gestor vê só a própria unidade; RH vê tudo.
-
-### Extrato da ficha (impresso no totem)
-- O policial escolhe as seções e imprime: dados funcionais, lotação e movimentações,
-  tempo de serviço e previsão de aposentadoria, cursos e capacitações, competências.
-- Folha A4 com cabeçalho "PRF-PI · Gestão de Pessoas · Extrato da ficha funcional",
-  data e hora, "Documento informativo, sem valor de declaração oficial", código de
-  verificação (ex.: SYN-7K4Q-2M9X) e QR code para `/verificar/CODIGO`. Sem CPF.
-- Cada impressão gera log ("impressao"). Os extratos emitidos ficam guardados (coleção
-  `extratos`) só com os campos de verificação.
-- Página pública `/verificar/:codigo`: mostra se o extrato é válido, nome, matrícula,
-  data de emissão e seções impressas; código inválido → "Extrato não encontrado".
-
-## Modo totem
-- Botões e textos grandes, navegação simples, pensada para toque.
-- Login obrigatório (matrícula + senha); teclado virtual em tela de toque.
-- Saída automática após 2 minutos sem uso (aviso nos últimos 15 segundos).
-- O totem fica em área interna, não aberto ao público; por isso o CPF não aparece na tela.
-- Cabeçalho com nome e perfil; na tela inicial, link "Acesso do RH (painel)".
-- O mesmo sistema funciona no navegador do computador.
+## Totem
+- Mesmo site, em tela de toque. Login obrigatório (matrícula + senha).
+- Menu do policial: Minha ficha, Meus documentos e processos, Enviar curso ou documento,
+  Minhas solicitações, Imprimir extrato da ficha.
+- Gestor e RH, no totem, veem o menu do policial + "Fichas dos servidores" (o gestor só
+  da unidade), "Pedidos para aprovar" e "Abrir painel completo".
+- Botões e textos grandes; teclado virtual em tela de toque e teclado físico no computador.
+- Saída automática após 2 minutos sem uso. Fica em área interna da unidade.
+- Por que totem e não só celular: segurança (aparelho da PRF, em modo quiosque, na rede
+  interna, sem guardar dados, com saída automática e log de origem "totem"), impressão
+  do extrato na hora, e acesso rápido para gestores e superintendência em visita às
+  unidades.
+- Hardware de baixo custo: tablet ou computador já existente + suporte antifurto +
+  impressora. Começar com piloto em 1 ou 2 unidades.
 
 ## Stack e decisões técnicas
 - React + TypeScript + Vite + TailwindCSS, deploy na Vercel.
@@ -119,4 +118,6 @@ O sistema tem duas áreas bem separadas:
 - Nunca usar dados reais de servidores.
 - Regra de aposentadoria: usar uma regra simplificada e configurável
   (idade e tempo de serviço mínimos). A regra exata seria definida pelo RH da PRF.
-- Custo mensal: praticamente zero (planos gratuitos do Firebase e da Vercel).
+- Custo mensal do software: praticamente zero (planos gratuitos do Firebase e da Vercel).
+- Custo de implantação: hardware dos totens (estimativa de R$ 5.000 a R$ 15.000, começando
+  por um piloto mais barato).

@@ -37,7 +37,7 @@ export default function Documentos() {
   return (
     <>
       <CabecalhoPagina titulo="Documentos"
-        descricao={ctx.usuario.perfil === 'gestor' ? `Documentos da unidade ${ctx.usuario.unidade}. Somente administradores podem cadastrar ou editar.` : 'Acervo documental de todos os servidores.'}
+        descricao="Acervo documental de todos os servidores, de todas as unidades."
         acoes={admin && (
           <Link to="/admin/documentos/novo"><Botao variante="destaque"><FilePlus2 className="size-4" /> Cadastrar documento</Botao></Link>
         )} />
@@ -114,10 +114,10 @@ export default function Documentos() {
                     <td>
                       <div className="flex justify-end gap-1">
                         <Link to={`/admin/documentos/${d.id}/editar`} title="Editar" aria-label={`Editar ${d.titulo}`}
-                          className="rounded-lg p-2 text-marinho-800 hover:bg-marinho-50"><Pencil className="size-4" /></Link>
+                          className="flex size-11 items-center justify-center rounded-lg text-marinho-800 hover:bg-marinho-50 active:bg-marinho-50 pointer-coarse:size-13"><Pencil className="size-4" /></Link>
                         {d.status !== 'Arquivado' && (
                           <button type="button" onClick={() => setArquivando(d)} title="Arquivar" aria-label={`Arquivar ${d.titulo}`}
-                            className="rounded-lg p-2 text-marinho-800 hover:bg-marinho-50"><Archive className="size-4" /></button>
+                            className="flex size-11 items-center justify-center rounded-lg text-marinho-800 hover:bg-marinho-50 active:bg-marinho-50 pointer-coarse:size-13"><Archive className="size-4" /></button>
                         )}
                       </div>
                     </td>

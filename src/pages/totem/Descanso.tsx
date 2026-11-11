@@ -3,6 +3,7 @@ import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { Logo } from '../../components/Logo'
 import { useAuth } from '../../hooks/useAuth'
 import { useRelogio } from '../../hooks/useRelogio'
+import { marcarPainelPeloTotem } from '../../lib/sessaoTotem'
 import { primeiraMaiuscula } from '../../lib/texto'
 import { modoDemonstracao } from '../../services'
 
@@ -61,10 +62,10 @@ export default function Descanso() {
           <Link to="/privacidade" onClick={(e) => e.stopPropagation()} className="underline underline-offset-4">
             Privacidade e proteção de dados (LGPD)
           </Link>
-          {/* Atalho discreto para o painel (exige login de gestor/admin). */}
-          <Link to="/admin" onClick={(e) => e.stopPropagation()}
+          {/* Atalho discreto para o painel (exige login do RH / Gestão); aberto daqui, herda a saída automática. */}
+          <Link to="/admin" onClick={(e) => { e.stopPropagation(); marcarPainelPeloTotem() }}
             className="inline-flex items-center gap-1.5 text-marinho-100/80 underline-offset-4 hover:text-white hover:underline">
-            <LayoutDashboard className="size-4" aria-hidden /> Acesso do RH (painel)
+            <LayoutDashboard className="size-4" aria-hidden /> Acesso do RH / Gestão (painel)
           </Link>
         </div>
         {modoDemonstracao && (

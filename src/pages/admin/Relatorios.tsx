@@ -50,11 +50,10 @@ export default function Relatorios() {
     const docs = dados.docs.filter(
       (d) => (!lotacao || d.lotacao === lotacao) && (!inicio || d.dataDocumento >= inicio) && (!fim || d.dataDocumento <= fim),
     )
-    const lotacoes = ctx.usuario.perfil === 'gestor' ? [ctx.usuario.unidade] : LOTACOES
     const base = {
       total: docs.length,
       porTipo: contar(docs, (d) => d.tipo, TIPOS_DOCUMENTO).sort((a, b) => b.total - a.total),
-      porLotacao: contar(docs, (d) => d.lotacao, lotacoes).map((x) => ({ ...x, nome: x.nome.replace('Delegacia de ', 'Del. ') })),
+      porLotacao: contar(docs, (d) => d.lotacao, LOTACOES).map((x) => ({ ...x, nome: x.nome.replace('Delegacia de ', 'Del. ') })),
       porStatus: contar(docs, (d) => d.status, STATUS_DOCUMENTO),
     }
     if (!dados.logs) return { ...base, logs: null }
@@ -98,12 +97,12 @@ export default function Relatorios() {
     })
     const semResultado = [...semRes.values()].sort((a, b) => b.total - a.total)
     return { ...base, logs: { dias, top10, semResultado, periodo: `${formatarData(iniLogs)} a ${formatarData(fimLogs)}` } }
-  }, [dados, inicio, fim, lotacao, ctx.usuario])
+  }, [dados, inicio, fim, lotacao])
 
   return (
     <>
       <CabecalhoPagina titulo="Relatórios e indicadores"
-        descricao={ctx.usuario.perfil === 'gestor' ? `Unidade: ${ctx.usuario.unidade}` : 'Toda a Superintendência'}
+        descricao="Todas as unidades da Superintendência"
         acoes={<Botao variante="secundario" onClick={() => window.print()}><Printer className="size-4" /> Exportar PDF</Botao>} />
       <p className="mb-4 hidden text-xs print:block">Relatório gerado em {formatarDataHora(new Date().toISOString())} por {ctx.usuario.nome} · SYNTRA · PRF-PI</p>
 

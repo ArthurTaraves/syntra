@@ -38,7 +38,7 @@ export default function Privacidade() {
             <li><strong>CPF apenas mascarado</strong> (ex.: ***.456.789-**). O CPF completo nunca é armazenado nem exibido.</li>
             <li><strong>Ficha do servidor</strong>: lotação e histórico de movimentações, data de nascimento e de ingresso (para a previsão de aposentadoria), cursos e capacitações, competências e indicações para oportunidades.</li>
             <li><strong>Metadados de documentos e processos</strong>: título, tipo, número do processo, datas, status e localização física do arquivo.</li>
-            <li><strong>Atualizações enviadas pelo próprio servidor</strong> (autoatendimento) e a decisão do gestor ou do RH.</li>
+            <li><strong>Atualizações enviadas pelo próprio servidor</strong> (autoatendimento) e a decisão do RH / Gestão.</li>
             <li><strong>Registros de acesso</strong>: quem consultou, visualizou, alterou ou imprimiu cada informação, quando e de onde (totem ou painel).</li>
             <li><strong>Extratos emitidos</strong>: código de verificação, nome, matrícula, data de emissão e quais seções foram impressas.</li>
           </ul>
@@ -56,9 +56,11 @@ export default function Privacidade() {
 
         <Secao titulo="Quem pode acessar">
           <ul>
-            <li><strong>No totem (Área do servidor)</strong>: qualquer pessoa, de qualquer perfil, consulta <strong>apenas a própria ficha</strong>, os próprios documentos e processos, e envia atualizações para aprovação.</li>
-            <li><strong>No painel do RH (computador)</strong>: o <strong>gestor de unidade</strong> vê só os servidores da sua unidade e aprova as atualizações deles (nunca o próprio pedido); o <strong>RH / administrador</strong> vê e edita tudo, incluindo os registros de acesso e o cadastro de usuários.</li>
-            <li>Documentos <strong>sigilosos</strong> nunca aparecem no totem; só são acessados no painel administrativo por perfis autorizados.</li>
+            <li>O SYNTRA é <strong>um único site</strong>, usado no computador e no totem. O que cada pessoa vê depende do <strong>nível de acesso da sua matrícula</strong>, igual nos dois aparelhos.</li>
+            <li><strong>Policial</strong>: consulta <strong>apenas a própria ficha</strong>, os próprios documentos, processos e pedidos, imprime o extrato e envia atualizações para aprovação. Não acessa o painel.</li>
+            <li><strong>RH / Gestão</strong>: vê e edita as fichas de <strong>todas as unidades</strong>, aprova as atualizações enviadas pelos servidores (<strong>ninguém aprova o próprio pedido</strong>) e acessa o painel completo, incluindo os registros de acesso e o cadastro de usuários.</li>
+            <li>No totem, a sessão encerra sozinha após 2 minutos sem uso, inclusive no painel aberto a partir dele, e cada acesso fica registrado com a origem "totem".</li>
+            <li>Documentos <strong>sigilosos</strong> nunca aparecem no totem; só são acessados no painel completo pelo RH / Gestão.</li>
           </ul>
           <p>As mesmas regras são aplicadas no servidor de dados, e não apenas na tela.</p>
         </Secao>

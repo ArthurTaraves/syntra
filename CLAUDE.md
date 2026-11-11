@@ -9,19 +9,24 @@ Protótipo acadêmico (projeto integrador SENAI) para a **Superintendência Regi
 ## Problema (resumo da PROPOSTA)
 Informações dos servidores espalhadas em 9 sistemas/sites e planilhas sem padrão; tempo de serviço, lotação, competências, capacitações e aposentadoria cruzados à mão; sem banco de talentos.
 
-## Organização em duas áreas (decisão registrada na PROPOSTA)
-- **Totem = "Área do servidor"** (`/totem`): **qualquer perfil vê só a PRÓPRIA ficha**. Menu igual para todos: Minha ficha · Meus documentos e processos · Enviar curso ou documento · Minhas solicitações · Imprimir extrato da ficha. **Não colocar no totem** busca de outros servidores, busca avançada, fichas de terceiros nem aprovação de pedidos; rotas desconhecidas do totem redirecionam ao menu.
-  - A regra "só a própria matrícula no totem" fica na **camada de serviços** (`permissoes.ts` com `origem === 'totem'`, e `restricaoPerfil(..., origem)` no Firebase), não só nas telas.
-  - Extrato: seções escolhidas, A4 (`@media print`), código `SYN-XXXX-XXXX` + QR para `/verificar/CODIGO`, sem CPF, log `impressao`; coleção `extratos` guarda só campos de verificação (`src/services/extratos.ts`).
-- **Site do RH = painel** (`/admin`): só gestor (própria unidade) e RH (tudo), no computador. Tudo que cruza dados fica aqui: fichas, busca por matrícula/nome e por nº de processo, talentos, indicadores e alertas, solicitações, documentos, processos, relatórios, logs, usuários.
+## Um único site, dois níveis de acesso (decisão do usuário em 10/11/2026)
+O mesmo site no computador e no totem; o que cada um vê depende do nível da matrícula. Há só **dois perfis** (o antigo "gestor de unidade", com escopo por unidade, foi **removido** do código, das telas, dos serviços, do modo local e das `firestore.rules`):
+- **Policial** (perfil `servidor`, rótulo "Policial"): no totem e no computador vê **só a própria ficha**. Menu: Minha ficha · Meus documentos e processos · Enviar curso ou documento · Minhas solicitações · Imprimir extrato. **Não entra no painel.** Faixa abaixo do "Olá": "Aqui você consulta a sua ficha".
+- **RH / Gestão** (perfil `admin`, rótulo "RH / Gestão"): vê tudo, de todas as unidades. No totem: o menu do policial + **Fichas dos servidores** (`/totem/fichas`, `/totem/ficha/:matricula`), **Pedidos para aprovar** (`/totem/pedidos`, com contador) e **Abrir painel completo** (`/admin`). Faixa: "Você também pode consultar e aprovar todos os servidores da PRF-PI".
+- **Ninguém aprova o próprio pedido** (`podeDecidirSolicitacao` e `firestore.rules`).
+- As regras ficam na **camada de serviços** (`permissoes.ts`: `ehGestao`, `podeVer*`; `restricaoPerfil` no Firebase) e nas `firestore.rules`, não só nas telas. As telas exclusivas do RH / Gestão no totem usam `ExigePerfil`; rotas desconhecidas do totem voltam ao menu.
+- Totem: saída automática de 2 min (`TotemShell`), logs com origem `totem`, documentos `sigiloso` nunca aparecem lá. O painel aberto a partir do totem (botão do menu ou link da tela de descanso) herda a saída de 2 min (`src/lib/sessaoTotem.ts`).
+- Extrato: seções escolhidas, A4 (`@media print`), código `SYN-XXXX-XXXX` + QR para `/verificar/CODIGO`, sem CPF, log `impressao`; coleção `extratos` guarda só campos de verificação (`src/services/extratos.ts`).
+- **Painel** (`/admin`): só RH / Gestão, todas as unidades: fichas, busca por matrícula/nome e por nº de processo, talentos, indicadores e alertas, solicitações, documentos, processos, relatórios, logs, usuários. Usável em tela de toque (`pointer-coarse:` no `ui.tsx`/menu; `Tabela` com rolagem horizontal).
 - Páginas públicas: `/privacidade` e `/verificar/:codigo`.
+- **Atenção:** a `docs/PROPOSTA.md` atual ainda descreve três perfis (com "gestor de unidade"). A decisão de dois níveis acima foi dada explicitamente pelo usuário e prevalece até a PROPOSTA ser alinhada.
 
 ## Solução (resumo da PROPOSTA)
 - Sistema único em que tudo fica ligado à **matrícula** (prontuário), no computador e num **totem** (touch, área interna, login obrigatório).
 - **Ficha do servidor em 5 blocos**: dados básicos · lotação e movimentações · tempo de serviço e aposentadoria · cursos e capacitações (com documentos) · perfil e talentos. Selo "Ficha atualizada há X meses".
 - **Painel de indicadores**, **alerta de risco por unidade**, **busca de talentos** com filtros combinados, **autoatendimento** com aprovação e **LGPD visível**.
 - Busca de documentos e localização física (acervo), mantida da etapa anterior.
-- Perfis: `servidor` (só a própria ficha; envia atualizações), `gestor` (só a própria unidade; aprova atualizações, nunca as próprias), `admin` = RH (vê e edita tudo).
+- Perfis: `servidor` = Policial (só a própria ficha; envia atualizações) e `admin` = RH / Gestão (vê e edita tudo, de todas as unidades; aprova atualizações, nunca as próprias).
 
 ## Stack
 React + Vite + TypeScript + TailwindCSS (v4, via `@tailwindcss/vite`) + React Router + Firebase (Auth e Firestore) + lucide-react. Deploy na Vercel.
@@ -42,10 +47,10 @@ React + Vite + TypeScript + TailwindCSS (v4, via `@tailwindcss/vite`) + React Ro
 ## Regras (obrigatórias)
 1. **Interface 100% em português do Brasil** (textos, mensagens de erro, rótulos, datas no formato brasileiro).
 2. **TODOS os dados são fictícios.** Nunca usar nomes, CPFs, matrículas ou processos reais. CPF sempre mascarado (ex.: `***.456.789-**`); nunca armazenar CPF completo.
-   - **Matrículas têm exatamente 4 dígitos** (`PADRAO_MATRICULA` em `src/lib/texto.ts`, `matriculaValida` em `firestore.rules`).
-   - **Três contas de demonstração, todas com o nome "Camila"** e senha `syntra123` (uma por perfil, conforme a PROPOSTA): **1001 = servidor** (Delegacia de Teresina), **1002 = gestor** (Delegacia de Parnaíba), **1003 = RH/admin** (Superintendência). Demais servidores fictícios: 1004–1030.
-   - O cenário fictício é intencional (Parnaíba e Corrente em vermelho, Superintendência e Picos em amarelo, Teresina e Floriano em verde; pedidos pendentes em Parnaíba). Ao mexer no quadro de `src/data/seed.ts`, preserve esse cenário.
-   - Ao mudar os dados fictícios, suba a `VERSAO` em `src/services/local/index.ts` (atual: `v5`) para o navegador descartar o acervo antigo.
+   - **Matrícula é sempre texto de exatamente 4 dígitos; zeros à esquerda contam** ("0001" ≠ "1"). Nunca converter para número (`PADRAO_MATRICULA`/`limparMatricula` em `src/lib/texto.ts`, `matriculaValida` em `firestore.rules`).
+   - **Duas contas de demonstração, ambas com o nome "Camila"** e senha `syntra123`: **0001 = Policial** (Delegacia de Teresina) e **0002 = RH / Gestão** (Superintendência). Demais servidores fictícios: 0003–0030 (a 0003 é a antiga linha da gestora de Parnaíba, hoje "Marcela Torres Ibiapina").
+   - O cenário fictício é intencional (Parnaíba e Corrente em vermelho, Superintendência e Picos em amarelo, Teresina e Floriano em verde; pedidos pendentes em Parnaíba e Teresina, e um pedido próprio da 0002 que ela não pode aprovar). A ordem das linhas do quadro em `src/data/seed.ts` sustenta o gerador e os vínculos: preserve-a.
+   - Ao mudar os dados fictícios, suba a `VERSAO` em `src/services/local/index.ts` (atual: `v6`) para o navegador descartar o acervo antigo.
 3. **Nunca apagar, sobrescrever, mover ou renomear o `.env`**, nem rodar comandos que possam removê-lo (`git clean -x`, `git clean -fdx`, `git stash -u`, `git stash --all`, `rm -rf` na raiz etc.). Novas variáveis vão para o `.env.example`.
 4. **Componentes de UI nunca acessam o Firebase diretamente** — nada de importar `firebase/*` em `src/pages`, `src/components` ou `src/hooks`. Todo acesso passa por `src/services`.
 5. Nenhuma chave ou credencial fixa no código: usar `import.meta.env.VITE_*`.

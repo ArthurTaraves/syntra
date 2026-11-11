@@ -2,18 +2,22 @@ import { lazy, Suspense } from 'react'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { Carregando } from './components/Estados'
 import { RotaProtegida } from './components/RotaProtegida'
+import { ExigePerfil } from './components/totem/ExigePerfil'
 import { TotemLogado } from './components/totem/TotemLogado'
 import { TotemShell } from './components/totem/TotemShell'
 import { AuthProvider } from './hooks/useAuth'
+import BuscaServidor from './pages/totem/BuscaServidor'
 import Descanso from './pages/totem/Descanso'
 import DetalheDocumento from './pages/totem/DetalheDocumento'
 import EnviarAtualizacao from './pages/totem/EnviarAtualizacao'
+import FichaTotem from './pages/totem/FichaTotem'
 import ImprimirExtrato from './pages/totem/ImprimirExtrato'
 import LoginTotem from './pages/totem/LoginTotem'
 import MenuTotem from './pages/totem/MenuTotem'
 import MeusDocumentos from './pages/totem/MeusDocumentos'
 import MinhaFicha from './pages/totem/MinhaFicha'
 import MinhasSolicitacoes from './pages/totem/MinhasSolicitacoes'
+import PedidosTotem from './pages/totem/PedidosTotem'
 
 // O painel (e o recharts) só é baixado quando alguém abre /admin: o totem fica leve.
 const PainelLayout = lazy(() => import('./components/painel/PainelLayout').then((m) => ({ default: m.PainelLayout })))
@@ -43,7 +47,8 @@ export default function App() {
           <Routes>
             <Route path="/" element={<Navigate to="/totem" replace />} />
 
-            {/* ---------- TOTEM = "Área do servidor": cada pessoa consulta só a PRÓPRIA ficha ---------- */}
+            {/* ---------- TOTEM (mesmo site, tela de toque) ----------
+                Policial: só a própria ficha. RH / Gestão: o mesmo menu + fichas de todos, pedidos e painel. */}
             <Route path="/totem" element={<TotemShell />}>
               <Route index element={<Descanso />} />
               <Route path="login" element={<LoginTotem />} />
@@ -55,18 +60,22 @@ export default function App() {
                 <Route path="solicitacoes" element={<MinhasSolicitacoes />} />
                 <Route path="extrato" element={<ImprimirExtrato />} />
                 <Route path="documento/:id" element={<DetalheDocumento />} />
-                {/* Qualquer rota antiga ou desconhecida do totem (buscas, fichas de outros, pedidos…) volta ao menu. */}
+                {/* Só RH / Gestão; o Policial volta ao menu (a proteção real está nos serviços e no firestore.rules). */}
+                <Route path="fichas" element={<ExigePerfil perfis={['admin']}><BuscaServidor /></ExigePerfil>} />
+                <Route path="ficha/:matricula" element={<ExigePerfil perfis={['admin']}><FichaTotem /></ExigePerfil>} />
+                <Route path="pedidos" element={<ExigePerfil perfis={['admin']}><PedidosTotem /></ExigePerfil>} />
+                {/* Qualquer rota antiga ou desconhecida do totem (buscas antigas etc.) volta ao menu. */}
                 <Route path="*" element={<Navigate to="/totem/menu" replace />} />
               </Route>
             </Route>
 
-            {/* ---------- SITE DO RH = painel (gestor: própria unidade · RH: tudo) ---------- */}
+            {/* ---------- PAINEL COMPLETO (/admin): só RH / Gestão, todas as unidades ---------- */}
             <Route path="/admin/login" element={<LoginPainel />} />
-            <Route path="/admin" element={<RotaProtegida login="/admin/login" perfis={['gestor', 'admin']}><PainelLayout /></RotaProtegida>}>
+            <Route path="/admin" element={<RotaProtegida login="/admin/login" perfis={['admin']}><PainelLayout /></RotaProtegida>}>
               <Route index element={<Inicio />} />
               <Route path="documentos" element={<Documentos />} />
-              <Route path="documentos/novo" element={<RotaProtegida login="/admin/login" perfis={['admin']}><FormDocumento /></RotaProtegida>} />
-              <Route path="documentos/:id/editar" element={<RotaProtegida login="/admin/login" perfis={['admin']}><FormDocumento /></RotaProtegida>} />
+              <Route path="documentos/novo" element={<FormDocumento />} />
+              <Route path="documentos/:id/editar" element={<FormDocumento />} />
               <Route path="servidores" element={<Servidores />} />
               <Route path="servidores/:matricula" element={<FichaServidor />} />
               <Route path="processos" element={<Processos />} />
@@ -75,8 +84,8 @@ export default function App() {
               <Route path="solicitacoes" element={<Solicitacoes />} />
               <Route path="indicadores" element={<Indicadores />} />
               <Route path="talentos" element={<Talentos />} />
-              <Route path="logs" element={<RotaProtegida login="/admin/login" perfis={['admin']}><Logs /></RotaProtegida>} />
-              <Route path="usuarios" element={<RotaProtegida login="/admin/login" perfis={['admin']}><Usuarios /></RotaProtegida>} />
+              <Route path="logs" element={<Logs />} />
+              <Route path="usuarios" element={<Usuarios />} />
             </Route>
 
             {/* ---------- Páginas públicas ---------- */}

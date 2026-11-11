@@ -12,7 +12,7 @@ export default function MinhasSolicitacoes() {
   const ctx = useContextoAcesso('totem')
   const { dados, carregando, erro } = useCarregar(
     async () =>
-      // Gestor/RH podem listar mais pedidos no painel; aqui só os da própria matrícula.
+      // O RH / Gestão vê os pedidos de todos em "Pedidos para aprovar"; aqui só os da própria matrícula.
       (await servicos.solicitacoes.listar({ matriculaServidor: ctx.usuario.matricula }, ctx)).filter((s) => s.matriculaServidor === ctx.usuario.matricula),
     [ctx],
   )

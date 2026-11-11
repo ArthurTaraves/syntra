@@ -3,6 +3,7 @@ import {
   FileText,
   FolderKanban,
   Gauge,
+  Hand,
   Inbox,
   UserSearch,
   LayoutDashboard,
@@ -16,24 +17,27 @@ import {
   X,
   type LucideIcon,
 } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { TOTEM_AVISO_SEGUNDOS, TOTEM_INATIVIDADE_SEGUNDOS } from '../../config/regrasRH'
 import { useAuth } from '../../hooks/useAuth'
+import { useInatividade } from '../../hooks/useInatividade'
+import { limparPainelPeloTotem, painelAbertoPeloTotem } from '../../lib/sessaoTotem'
 import { modoDemonstracao, podeDecidirSolicitacao, restaurarDadosDemonstracao, ROTULO_PERFIL, servicos } from '../../services'
-import type { Perfil } from '../../types'
 import { Logo } from '../Logo'
 
-const ITENS: { para: string; rotulo: string; Icone: LucideIcon; perfis: Perfil[] }[] = [
-  { para: '/admin', rotulo: 'Início', Icone: LayoutDashboard, perfis: ['gestor', 'admin'] },
-  { para: '/admin/documentos', rotulo: 'Documentos', Icone: FileText, perfis: ['gestor', 'admin'] },
-  { para: '/admin/indicadores', rotulo: 'Indicadores e alertas', Icone: Gauge, perfis: ['gestor', 'admin'] },
-  { para: '/admin/talentos', rotulo: 'Busca de talentos', Icone: UserSearch, perfis: ['gestor', 'admin'] },
-  { para: '/admin/servidores', rotulo: 'Fichas dos servidores', Icone: Users, perfis: ['gestor', 'admin'] },
-  { para: '/admin/solicitacoes', rotulo: 'Solicitações', Icone: Inbox, perfis: ['gestor', 'admin'] },
-  { para: '/admin/processos', rotulo: 'Processos', Icone: FolderKanban, perfis: ['gestor', 'admin'] },
-  { para: '/admin/relatorios', rotulo: 'Relatórios do acervo', Icone: BarChart3, perfis: ['gestor', 'admin'] },
-  { para: '/admin/logs', rotulo: 'Logs de acesso', Icone: ScrollText, perfis: ['admin'] },
-  { para: '/admin/usuarios', rotulo: 'Usuários', Icone: UserCog, perfis: ['admin'] },
+// Todo o painel é do RH / Gestão (a rota /admin só aceita esse perfil).
+const ITENS: { para: string; rotulo: string; Icone: LucideIcon }[] = [
+  { para: '/admin', rotulo: 'Início', Icone: LayoutDashboard },
+  { para: '/admin/documentos', rotulo: 'Documentos', Icone: FileText },
+  { para: '/admin/indicadores', rotulo: 'Indicadores e alertas', Icone: Gauge },
+  { para: '/admin/talentos', rotulo: 'Busca de talentos', Icone: UserSearch },
+  { para: '/admin/servidores', rotulo: 'Fichas dos servidores', Icone: Users },
+  { para: '/admin/solicitacoes', rotulo: 'Solicitações', Icone: Inbox },
+  { para: '/admin/processos', rotulo: 'Processos', Icone: FolderKanban },
+  { para: '/admin/relatorios', rotulo: 'Relatórios do acervo', Icone: BarChart3 },
+  { para: '/admin/logs', rotulo: 'Logs de acesso', Icone: ScrollText },
+  { para: '/admin/usuarios', rotulo: 'Usuários', Icone: UserCog },
 ]
 
 export function PainelLayout() {
@@ -41,6 +45,8 @@ export function PainelLayout() {
   const navigate = useNavigate()
   const [menuAberto, setMenuAberto] = useState(false)
   const { pathname } = useLocation()
+  // Aberto pelo botão "Abrir painel completo" do totem: herda a saída automática de 2 minutos.
+  const [peloTotem] = useState(painelAbertoPeloTotem)
   // Quantos pedidos de autoatendimento esperam decisão (atualiza ao trocar de tela).
   const [pendentes, setPendentes] = useState(0)
   useEffect(() => {
@@ -54,12 +60,21 @@ export function PainelLayout() {
       ativo = false
     }
   }, [usuario, pathname])
-  if (!usuario) return null
 
-  const encerrar = async () => {
+  const encerrar = useCallback(async () => {
     await sair('painel').catch(() => undefined)
-    navigate('/admin/login', { replace: true })
-  }
+    limparPainelPeloTotem()
+    navigate(peloTotem ? '/totem' : '/admin/login', { replace: true })
+  }, [sair, navigate, peloTotem])
+
+  const { restante, reiniciar } = useInatividade({
+    ativo: peloTotem && !!usuario,
+    limiteSegundos: TOTEM_INATIVIDADE_SEGUNDOS,
+    avisoSegundos: TOTEM_AVISO_SEGUNDOS,
+    aoExpirar: encerrar,
+  })
+
+  if (!usuario) return null
 
   const restaurar = () => {
     if (!confirm('Restaurar os dados fictícios originais? Alterações feitas nesta demonstração serão perdidas.')) return
@@ -70,22 +85,22 @@ export function PainelLayout() {
   return (
     <div className="flex min-h-dvh bg-fundo text-marinho-950">
       <aside
-        className={`fixed inset-y-0 left-0 z-40 flex w-64 flex-col bg-marinho-900 text-white transition-transform print:hidden lg:sticky lg:top-0 lg:h-dvh lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-40 flex w-72 flex-col overflow-y-auto bg-marinho-900 text-white transition-transform print:hidden lg:sticky lg:top-0 lg:h-dvh lg:translate-x-0 ${
           menuAberto ? 'translate-x-0' : '-translate-x-full'
         }`}>
-        <div className="flex items-center justify-between px-5 py-5">
+        <div className="flex items-center justify-between px-5 py-4">
           <Link to="/admin"><Logo tamanho="sm" /></Link>
-          <button type="button" className="rounded p-1 lg:hidden" onClick={() => setMenuAberto(false)} aria-label="Fechar menu">
-            <X className="size-5" />
+          <button type="button" className="flex size-11 items-center justify-center rounded-lg active:bg-marinho-800 lg:hidden" onClick={() => setMenuAberto(false)} aria-label="Fechar menu">
+            <X className="size-6" />
           </button>
         </div>
-        <p className="px-5 pb-3 text-xs uppercase tracking-wider text-marinho-100/70">Painel do RH · PRF-PI</p>
+        <p className="px-5 pb-3 text-xs uppercase tracking-wider text-marinho-100/70">Painel do RH / Gestão · PRF-PI</p>
         <nav className="flex flex-1 flex-col gap-1 px-3" aria-label="Menu do painel">
-          {ITENS.filter((i) => i.perfis.includes(usuario.perfil)).map(({ para, rotulo, Icone }) => (
+          {ITENS.map(({ para, rotulo, Icone }) => (
             <NavLink key={para} to={para} end={para === '/admin'} onClick={() => setMenuAberto(false)}
               className={({ isActive }) =>
-                `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition ${
-                  isActive ? 'bg-destaque-500 text-marinho-950' : 'text-marinho-50 hover:bg-marinho-800'
+                `flex min-h-11 items-center gap-3 rounded-lg px-3 text-sm font-medium transition pointer-coarse:min-h-13 pointer-coarse:text-base ${
+                  isActive ? 'bg-destaque-500 text-marinho-950' : 'text-marinho-50 hover:bg-marinho-800 active:bg-marinho-800'
                 }`
               }>
               <Icone className="size-5" aria-hidden /> {rotulo}
@@ -94,20 +109,20 @@ export function PainelLayout() {
               )}
             </NavLink>
           ))}
-          <Link to="/totem" className="mt-4 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-marinho-100 hover:bg-marinho-800">
-            <MonitorSmartphone className="size-5" aria-hidden /> Abrir modo totem
+          <Link to="/totem/menu" className="mt-4 flex min-h-11 items-center gap-3 rounded-lg px-3 text-sm text-marinho-100 hover:bg-marinho-800 active:bg-marinho-800 pointer-coarse:min-h-13 pointer-coarse:text-base">
+            <MonitorSmartphone className="size-5" aria-hidden /> Voltar ao modo totem
           </Link>
         </nav>
         <div className="border-t border-marinho-800 p-4 text-sm">
           <p className="font-semibold">{usuario.nome}</p>
           <p className="text-marinho-100">{ROTULO_PERFIL[usuario.perfil]} · {usuario.unidade}</p>
           {modoDemonstracao && (
-            <button type="button" onClick={restaurar} className="mt-3 flex items-center gap-2 text-xs text-destaque-400 hover:underline">
+            <button type="button" onClick={restaurar} className="mt-2 flex min-h-11 items-center gap-2 text-xs text-destaque-400 hover:underline">
               <RotateCcw className="size-3.5" /> Restaurar dados da demonstração
             </button>
           )}
           <button type="button" onClick={encerrar}
-            className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-marinho-800 py-2 font-semibold hover:bg-marinho-700">
+            className="mt-2 flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-marinho-800 font-semibold hover:bg-marinho-700 active:bg-marinho-700 pointer-coarse:min-h-13">
             <LogOut className="size-4" aria-hidden /> Sair
           </button>
         </div>
@@ -115,8 +130,9 @@ export function PainelLayout() {
       {menuAberto && <div className="fixed inset-0 z-30 bg-black/40 lg:hidden" onClick={() => setMenuAberto(false)} />}
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex items-center gap-3 bg-marinho-900 px-4 py-3 text-white print:hidden lg:hidden">
-          <button type="button" onClick={() => setMenuAberto(true)} aria-label="Abrir menu"><Menu className="size-6" /></button>
+        <header className="flex items-center gap-3 bg-marinho-900 px-4 py-2 text-white print:hidden lg:hidden">
+          <button type="button" onClick={() => setMenuAberto(true)} aria-label="Abrir menu"
+            className="flex size-12 items-center justify-center rounded-lg active:bg-marinho-800"><Menu className="size-7" /></button>
           <Logo tamanho="sm" />
         </header>
         {modoDemonstracao && (
@@ -124,10 +140,27 @@ export function PainelLayout() {
             <strong>Modo demonstração:</strong> dados fictícios armazenados apenas neste navegador.
           </p>
         )}
-        <main className="w-full max-w-7xl flex-1 p-4 sm:p-6 lg:p-8">
+        <main className="w-full min-w-0 max-w-7xl flex-1 p-4 sm:p-6 lg:p-8">
           <Outlet />
         </main>
       </div>
+
+      {restante !== null && (
+        <div role="alertdialog" aria-modal="true" aria-labelledby="aviso-sessao-painel"
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-marinho-950/85 p-6 print:hidden">
+          <div className="w-full max-w-md rounded-2xl bg-white p-8 text-center shadow-2xl">
+            <p id="aviso-sessao-painel" className="text-2xl font-bold text-marinho-900">Sua sessão vai encerrar…</p>
+            <p className="my-5 text-7xl font-extrabold tabular-nums text-marinho-800" aria-live="assertive">{restante}</p>
+            <p className="mb-6 text-marinho-700">
+              Painel aberto pelo totem: por segurança, a sessão encerra após {TOTEM_INATIVIDADE_SEGUNDOS / 60} minutos sem uso.
+            </p>
+            <button type="button" onClick={reiniciar}
+              className="flex min-h-16 w-full items-center justify-center gap-3 rounded-xl bg-destaque-500 text-xl font-bold text-marinho-950 active:bg-destaque-400">
+              <Hand className="size-7" aria-hidden /> Continuar usando
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

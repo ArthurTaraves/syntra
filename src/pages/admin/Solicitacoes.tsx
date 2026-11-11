@@ -16,7 +16,7 @@ const ABAS: { id: StatusSolicitacao | 'todas'; rotulo: string }[] = [
   { id: 'todas', rotulo: 'Todas' },
 ]
 
-/** Autoatendimento: pedidos enviados pelos servidores, para o gestor da unidade ou o RH decidir. */
+/** Autoatendimento: pedidos enviados pelos servidores, para o RH / Gestão decidir (nunca os próprios). */
 export default function Solicitacoes() {
   const ctx = useContextoAcesso('painel')
   const [aba, setAba] = useState<StatusSolicitacao | 'todas'>('pendente')
@@ -52,14 +52,12 @@ export default function Solicitacoes() {
   return (
     <>
       <CabecalhoPagina titulo="Solicitações de atualização"
-        descricao={ctx.usuario.perfil === 'gestor'
-          ? `Cursos e documentos enviados pelos servidores da ${ctx.usuario.unidade}. Seus próprios pedidos são analisados pelo RH.`
-          : 'Cursos e documentos enviados pelos servidores (autoatendimento). Ao aprovar, a ficha é atualizada.'} />
+        descricao="Cursos e documentos enviados pelos servidores de todas as unidades (autoatendimento). Ao aprovar, a ficha é atualizada. Ninguém decide o próprio pedido." />
 
       <div className="mb-4 flex flex-wrap gap-2" role="tablist" aria-label="Filtrar por situação">
         {ABAS.map((a) => (
           <button key={a.id} type="button" role="tab" aria-selected={aba === a.id} onClick={() => setAba(a.id)}
-            className={`rounded-full px-4 py-1.5 text-sm font-semibold ring-1 transition ${aba === a.id ? 'bg-marinho-800 text-white ring-marinho-800' : 'bg-white text-marinho-900 ring-marinho-100 hover:bg-marinho-50'}`}>
+            className={`min-h-11 rounded-full px-4 text-sm font-semibold ring-1 transition pointer-coarse:min-h-13 pointer-coarse:px-5 pointer-coarse:text-base ${aba === a.id ? 'bg-marinho-800 text-white ring-marinho-800' : 'bg-white text-marinho-900 ring-marinho-100 hover:bg-marinho-50'}`}>
             {a.rotulo}{a.id !== 'todas' && dados ? ` (${contagem(a.id)})` : ''}
           </button>
         ))}
@@ -74,7 +72,7 @@ export default function Solicitacoes() {
         <ul className="flex flex-col gap-3">
           {lista.map((s) => {
             const pode = podeDecidirSolicitacao(ctx.usuario, s)
-            const proprio = s.status === 'pendente' && s.matriculaServidor === ctx.usuario.matricula && ctx.usuario.perfil === 'gestor'
+            const proprio = s.status === 'pendente' && s.matriculaServidor === ctx.usuario.matricula
             return (
               <CardSolicitacao key={s.id} s={s}
                 mostrarServidor={
@@ -92,7 +90,7 @@ export default function Solicitacoes() {
                     </Botao>
                   </>
                 ) : proprio ? (
-                  <span className="rounded-lg bg-marinho-50 px-3 py-2 text-xs text-marinho-800">Seu pedido: será analisado pelo RH</span>
+                  <span className="rounded-lg bg-marinho-50 px-3 py-2 text-xs text-marinho-800">Seu pedido: será analisado por outra pessoa do RH / Gestão</span>
                 ) : undefined} />
             )
           })}

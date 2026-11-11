@@ -76,7 +76,7 @@ export default function DetalheProcesso() {
         </div>
 
         <div className="flex flex-col gap-6">
-          {podeMovimentarProcesso(ctx.usuario, p) && (
+          {podeMovimentarProcesso(ctx.usuario) && (
             <Cartao>
               <h2 className="mb-4 font-bold text-marinho-900">Adicionar movimentação</h2>
               <form onSubmit={adicionar} className="flex flex-col gap-3" noValidate>

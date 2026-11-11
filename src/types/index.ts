@@ -70,14 +70,14 @@ export interface Servidor {
   indicacoes: string[]
   /** Última atualização aprovada da ficha ("atualizada há X meses"). */
   fichaAtualizadaEm: string
-  /** id do último pedido de autoatendimento aprovado (as regras do Firestore conferem). */
+  /** id do último pedido de autoatendimento aprovado (rastreabilidade da atualização). */
   ultimaSolicitacaoAprovada?: string
 }
 
 export const INDICACOES = ['Liderança', 'Instrutoria', 'Mentoria', 'Projetos'] as const
 
 // ---------------------------------------------------------------------------
-// Autoatendimento: o servidor envia; gestor da unidade ou RH aprova/recusa.
+// Autoatendimento: o servidor envia; o RH / Gestão aprova/recusa (ninguém decide o próprio pedido).
 // ---------------------------------------------------------------------------
 export const STATUS_SOLICITACAO = ['pendente', 'aprovada', 'recusada'] as const
 export type StatusSolicitacao = (typeof STATUS_SOLICITACAO)[number]
@@ -163,7 +163,7 @@ export interface Documento {
   matriculaServidor: string
   /** Desnormalizado do servidor: permite busca por nome sem ler a coleção de servidores. */
   nomeServidor: string
-  /** Desnormalizado do servidor: usado pelas regras do gestor (documentos da sua unidade). */
+  /** Desnormalizado do servidor: usado nos filtros e relatórios por lotação. */
   lotacao: Lotacao
   dataDocumento: string
   dataArquivamento: string | null
@@ -172,7 +172,7 @@ export interface Documento {
   palavrasChave: string[]
   urlArquivo?: string
   nivelAcesso: NivelAcesso
-  /** "autoatendimento" = enviado pelo servidor e aprovado pelo gestor/RH. */
+  /** "autoatendimento" = enviado pelo servidor e aprovado pelo RH / Gestão. */
   origemCadastro?: 'painel' | 'autoatendimento'
   /** Pedido de autoatendimento que originou o documento (quando origemCadastro = "autoatendimento"). */
   solicitacaoId?: string
@@ -205,7 +205,12 @@ export interface Processo {
   documentosIds: string[]
 }
 
-export const PERFIS = ['servidor', 'gestor', 'admin'] as const
+/**
+ * Dois níveis de acesso, pela matrícula (valem igual no totem e no computador):
+ *  - servidor = Policial: só a PRÓPRIA ficha; não entra no painel.
+ *  - admin    = RH / Gestão: vê e edita tudo, de todas as unidades.
+ */
+export const PERFIS = ['servidor', 'admin'] as const
 export type Perfil = (typeof PERFIS)[number]
 
 export interface Usuario {

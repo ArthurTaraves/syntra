@@ -41,15 +41,15 @@ const p2 = (n: number) => String(n).padStart(2, '0')
 const isoDia = (d: Date) => `${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())}`
 
 // ---------------------------------------------------------------------------
-// Contas de demonstração (também listadas no README): uma para cada perfil,
-// todas com o nome "Camila" (o cabeçalho mostra o perfil ao lado do nome).
+// Contas de demonstração (também listadas no README): uma para cada nível de acesso,
+// ambas com o nome "Camila" (o cabeçalho mostra o perfil ao lado do nome).
+// Matrícula é SEMPRE texto de 4 dígitos: zeros à esquerda fazem parte dela ("0001").
 // ---------------------------------------------------------------------------
 export const SENHA_DEMO = 'syntra123'
 
 export const CONTAS_DEMO: Usuario[] = [
-  { uid: 'demo-servidor', nome: 'Camila', matricula: '1001', perfil: 'servidor', unidade: 'Delegacia de Teresina' },
-  { uid: 'demo-gestor', nome: 'Camila', matricula: '1002', perfil: 'gestor', unidade: 'Delegacia de Parnaíba' },
-  { uid: 'demo-rh', nome: 'Camila', matricula: '1003', perfil: 'admin', unidade: 'Superintendência – Teresina' },
+  { uid: 'demo-servidor', nome: 'Camila', matricula: '0001', perfil: 'servidor', unidade: 'Delegacia de Teresina' },
+  { uid: 'demo-rh', nome: 'Camila', matricula: '0002', perfil: 'admin', unidade: 'Superintendência – Teresina' },
 ]
 
 // ---------------------------------------------------------------------------
@@ -100,13 +100,17 @@ interface Linha {
   situacao?: SituacaoServidor
   /** Unidades anteriores (mais antiga primeiro). */
   antes?: Lotacao[]
+  /** Matrícula fixa; sem ela, usa a posição no quadro (linha 4 → "0004"). */
+  matricula?: string
 }
 
 const QUADRO: Linha[] = [
-  // 1001–1003: contas de demonstração "Camila"
-  { nome: 'Camila', lotacao: 'Delegacia de Teresina', cargo: PRF, nasc: 1988, ingresso: 2014, comp: ['Fiscalização de trânsito', 'Primeiros socorros'], ind: ['Projetos'], antes: ['Delegacia de Picos'] },
-  { nome: 'Camila', lotacao: 'Delegacia de Parnaíba', cargo: PRF, nasc: 1979, ingresso: 2005, comp: ['Gestão de pessoas', 'Fiscalização de trânsito', 'Atendimento a acidentes'], ind: ['Liderança'], antes: ['Delegacia de Floriano', 'Delegacia de Teresina'] },
-  { nome: 'Camila', lotacao: 'Superintendência – Teresina', cargo: ANALISTA, nasc: 1983, ingresso: 2009, comp: ['Gestão de pessoas', 'Planilhas e análise de dados', 'Redação oficial'], ind: ['Liderança', 'Projetos'] },
+  // 0001 e 0002: contas de demonstração "Camila" (Policial e RH / Gestão).
+  // A ordem das linhas é a mesma de antes (o gerador pseudoaleatório e os vínculos com
+  // processos/documentos dependem dela); por isso as três primeiras têm matrícula fixa.
+  { matricula: '0001', nome: 'Camila', lotacao: 'Delegacia de Teresina', cargo: PRF, nasc: 1988, ingresso: 2014, comp: ['Fiscalização de trânsito', 'Primeiros socorros'], ind: ['Projetos'], antes: ['Delegacia de Picos'] },
+  { matricula: '0003', nome: 'Marcela Torres Ibiapina', lotacao: 'Delegacia de Parnaíba', cargo: PRF, nasc: 1979, ingresso: 2005, comp: ['Gestão de pessoas', 'Fiscalização de trânsito', 'Atendimento a acidentes'], ind: ['Liderança'], antes: ['Delegacia de Floriano', 'Delegacia de Teresina'] },
+  { matricula: '0002', nome: 'Camila', lotacao: 'Superintendência – Teresina', cargo: ANALISTA, nasc: 1983, ingresso: 2009, comp: ['Gestão de pessoas', 'Planilhas e análise de dados', 'Redação oficial'], ind: ['Liderança', 'Projetos'] },
   // Superintendência (8 no total)
   { nome: 'Heitor Nogueira Barros', lotacao: 'Superintendência – Teresina', cargo: AGENTE, nasc: 1966, ingresso: 1990, comp: ['Gestão de contratos', 'Redação oficial'], ind: ['Mentoria'] },
   { nome: 'Beatriz Sampaio Holanda', lotacao: 'Superintendência – Teresina', cargo: ANALISTA, nasc: 1975, ingresso: 2002, comp: ['Gestão de contratos', 'Planilhas e análise de dados'] },
@@ -115,13 +119,13 @@ const QUADRO: Linha[] = [
   { nome: 'Rafael Coutinho Esteves', lotacao: 'Superintendência – Teresina', cargo: PRF, nasc: 1985, ingresso: 2010, comp: ['Instrutor de armamento e tiro', 'Fiscalização de trânsito'], ind: ['Instrutoria', 'Liderança'], antes: ['Delegacia de Corrente'] },
   { nome: 'Natália Freitas Macedo', lotacao: 'Superintendência – Teresina', cargo: TAE, nasc: 1978, ingresso: 2006, comp: ['Atendimento ao público', 'Redação oficial'], ind: ['Instrutoria'] },
   { nome: 'Gustavo Albuquerque Rocha', lotacao: 'Superintendência – Teresina', cargo: AGENTE, nasc: 1968, ingresso: 1994, comp: ['Redação oficial', 'Atendimento ao público'] },
-  // Delegacia de Teresina (6 no total, com a Camila 1001)
+  // Delegacia de Teresina (6 no total, com a Camila 0001)
   { nome: 'Davi Holanda Quaresma', lotacao: 'Delegacia de Teresina', cargo: PRF, nasc: 1992, ingresso: 2018, comp: ['Motopoliciamento', 'Fiscalização de trânsito'] },
   { nome: 'Larissa Junqueira Falcão', lotacao: 'Delegacia de Teresina', cargo: PRF, nasc: 1987, ingresso: 2012, comp: ['Libras', 'Atendimento a acidentes', 'Primeiros socorros'], ind: ['Mentoria'], antes: ['Delegacia de Floriano'] },
   { nome: 'Tiago Damasceno Rocha', lotacao: 'Delegacia de Teresina', cargo: PRF, nasc: 1980, ingresso: 2008, comp: ['Atendimento a acidentes', 'Direção defensiva'], ind: ['Instrutoria'] },
   { nome: 'Yasmin Vasconcelos Lima', lotacao: 'Delegacia de Teresina', cargo: AGENTE, nasc: 1995, ingresso: 2021, comp: ['Atendimento ao público', 'Planilhas e análise de dados'] },
   { nome: 'Bruno Esteves Gouveia', lotacao: 'Delegacia de Teresina', cargo: PRF, nasc: 1974, ingresso: 2003, comp: ['Fiscalização de trânsito', 'Direção defensiva'], antes: ['Delegacia de Picos'] },
-  // Delegacia de Parnaíba (5 no total, com a Camila 1002)
+  // Delegacia de Parnaíba (5 no total, com a Marcela 0003)
   { nome: 'Joaquim Ibiapina Cavalcante', lotacao: 'Delegacia de Parnaíba', cargo: PRF, nasc: 1967, ingresso: 1993, comp: ['Perícia em acidentes de trânsito', 'Atendimento a acidentes'], ind: ['Mentoria'] },
   { nome: 'Valéria Nogueira Xavier', lotacao: 'Delegacia de Parnaíba', cargo: PRF, nasc: 1969, ingresso: 1995, comp: ['Fiscalização de produtos perigosos', 'Fiscalização de trânsito'], antes: ['Superintendência – Teresina'] },
   { nome: 'Wesley Barros Sampaio', lotacao: 'Delegacia de Parnaíba', cargo: PRF, nasc: 1993, ingresso: 2019, comp: ['Fiscalização de trânsito', 'Primeiros socorros'] },
@@ -208,7 +212,8 @@ export function gerarSeed(agora: Date = new Date()): DadosSeed {
   // ---------------- Servidores (30) ----------------
   const emailsUsados = new Set<string>()
   const servidores: Servidor[] = QUADRO.map((l, i) => {
-    const matricula = String(1001 + i)
+    // Texto de 4 dígitos com zeros à esquerda (nunca número): linha 4 → "0004".
+    const matricula = l.matricula ?? String(i + 1).padStart(4, '0')
     const partes = l.nome.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().split(' ')
     let base = partes.length > 1 ? `${partes[0]}.${partes[partes.length - 1]}` : `${partes[0]}.${matricula}`
     if (emailsUsados.has(base)) base = `${base}.${matricula}`
@@ -274,7 +279,7 @@ export function gerarSeed(agora: Date = new Date()): DadosSeed {
   let seqDoc = 1
 
   for (let i = 0; i < 40; i++) {
-    // Os 4 primeiros processos pertencem à conta "servidor" de demonstração (Camila 1001).
+    // Os 4 primeiros processos pertencem à conta "Policial" de demonstração (Camila 0001).
     const srv = i < 4 ? servidores[0] : servidores[(i % 29) + 1]
     const ano = int(Math.max(2009, Number(srv.dataIngresso.slice(0, 4)) + 1), 2025)
     const numeroProcesso = `08665.${String(int(1, 999999)).padStart(6, '0')}/${ano}-${p2(int(10, 99))}`
@@ -406,28 +411,28 @@ export function gerarSeed(agora: Date = new Date()): DadosSeed {
     solicitacoes.push(sol)
     return sol
   }
-  // Pendentes da Delegacia de Parnaíba → a gestora 1002 pode aprovar.
-  novaSol('1018', { tipo: 'capacitacao', capacitacao: { nome: 'Atendimento Pré-Hospitalar (APH) – Reciclagem', area: 'Saúde e segurança', cargaHoraria: 20, instituicao: 'Corpo de Bombeiros Militar do PI', dataConclusao: mesesAtras(1) }, nomeArquivo: 'certificado-aph-2026.pdf' })
-  novaSol('1019', { tipo: 'documento', documento: { titulo: 'Diploma de especialização em Gestão Pública', tipo: 'Capacitação', descricao: 'Pós-graduação lato sensu concluída em 2025.' }, nomeArquivo: 'diploma-especializacao.pdf', origem: 'painel' })
-  // Pendente da própria gestora → ela não pode aprovar o próprio pedido; só o RH.
-  novaSol('1002', { tipo: 'capacitacao', capacitacao: { nome: 'Gestão de Riscos no Setor Público', area: 'Gestão', cargaHoraria: 30, instituicao: 'ENAP', dataConclusao: mesesAtras(2) }, nomeArquivo: 'certificado-gestao-riscos.pdf', origem: 'painel' })
-  // Pendente de Teresina → o RH aprova (não há conta de gestor de Teresina na demonstração).
-  novaSol('1013', { tipo: 'capacitacao', capacitacao: { nome: 'Operação de Radar Portátil', area: 'Operacional', cargaHoraria: 16, instituicao: 'UniPRF (EAD)', dataConclusao: mesesAtras(3) } })
-  // Histórico da Camila 1001: uma aprovada (há 7 meses) e uma recusada.
-  const rh = CONTAS_DEMO[2]
-  const aprovada = novaSol('1001', {
+  // Pendentes da Delegacia de Parnaíba → o RH / Gestão (0002) aprova.
+  novaSol('0018', { tipo: 'capacitacao', capacitacao: { nome: 'Atendimento Pré-Hospitalar (APH) – Reciclagem', area: 'Saúde e segurança', cargaHoraria: 20, instituicao: 'Corpo de Bombeiros Militar do PI', dataConclusao: mesesAtras(1) }, nomeArquivo: 'certificado-aph-2026.pdf' })
+  novaSol('0019', { tipo: 'documento', documento: { titulo: 'Diploma de especialização em Gestão Pública', tipo: 'Capacitação', descricao: 'Pós-graduação lato sensu concluída em 2025.' }, nomeArquivo: 'diploma-especializacao.pdf', origem: 'painel' })
+  // Pendente da própria Camila RH / Gestão → ninguém aprova o próprio pedido (fica para outra pessoa do RH).
+  novaSol('0002', { tipo: 'capacitacao', capacitacao: { nome: 'Gestão de Riscos no Setor Público', area: 'Gestão', cargaHoraria: 30, instituicao: 'ENAP', dataConclusao: mesesAtras(2) }, nomeArquivo: 'certificado-gestao-riscos.pdf', origem: 'painel' })
+  // Pendente de Teresina → o RH / Gestão aprova.
+  novaSol('0013', { tipo: 'capacitacao', capacitacao: { nome: 'Operação de Radar Portátil', area: 'Operacional', cargaHoraria: 16, instituicao: 'UniPRF (EAD)', dataConclusao: mesesAtras(3) } })
+  // Histórico da Camila 0001: uma aprovada (há 7 meses) e uma recusada.
+  const rh = CONTAS_DEMO[1]
+  const aprovada = novaSol('0001', {
     tipo: 'capacitacao',
     capacitacao: { ...{ nome: CURSO_LGPD.nome, area: CURSO_LGPD.area, cargaHoraria: CURSO_LGPD.ch, instituicao: CURSO_LGPD.inst }, dataConclusao: mesesAtras(8) },
     status: 'aprovada',
     criadaEm: `${mesesAtras(7)}T10:00:00.000Z`,
     decididaEm: `${mesesAtras(7)}T15:00:00.000Z`,
     decididaPorUid: rh.uid,
-    decididaPorNome: `${rh.nome} (RH)`,
+    decididaPorNome: `${rh.nome} (RH / Gestão)`,
   })
   const camila = servidores[0]
   if (!camila.capacitacoes.some((c) => c.nome === CURSO_LGPD.nome))
-    camila.capacitacoes.push({ id: `cap-1001-${camila.capacitacoes.length + 1}`, ...aprovada.capacitacao! })
-  novaSol('1001', {
+    camila.capacitacoes.push({ id: `cap-0001-${camila.capacitacoes.length + 1}`, ...aprovada.capacitacao! })
+  novaSol('0001', {
     tipo: 'documento',
     documento: { titulo: 'Certificado de proficiência em inglês', tipo: 'Capacitação', descricao: 'Nível intermediário.' },
     nomeArquivo: 'ingles.jpg',
@@ -435,7 +440,7 @@ export function gerarSeed(agora: Date = new Date()): DadosSeed {
     criadaEm: diasAtras(40),
     decididaEm: diasAtras(38),
     decididaPorUid: rh.uid,
-    decididaPorNome: `${rh.nome} (RH)`,
+    decididaPorNome: `${rh.nome} (RH / Gestão)`,
     motivoRecusa: 'A imagem do certificado está ilegível. Envie novamente em PDF.',
   })
 
@@ -463,13 +468,16 @@ export function gerarSeed(agora: Date = new Date()): DadosSeed {
         data: data.toISOString(),
       })
       if (!semResultado && r() < 0.7) {
-        const doc = r() < 0.5 ? documentos[int(0, 14)] : pick(documentos)
+        // O Policial só abre os próprios documentos (nunca sigilosos); o RH / Gestão, qualquer um.
+        const doc =
+          u.perfil === 'servidor'
+            ? pick(documentos.filter((d) => d.matriculaServidor === u.matricula && d.nivelAcesso !== 'sigiloso'))
+            : r() < 0.5 ? documentos[int(0, 14)] : pick(documentos)
         logs.push({ ...base, id: `log-${seqLog++}`, acao: 'visualizacao', alvo: doc.id, detalhe: doc.titulo, data: new Date(data.getTime() + 60000).toISOString() })
       }
-      // Acessos a fichas (LGPD visível): gestor (da sua unidade) e RH abrindo fichas no painel.
-      if (u.perfil !== 'servidor' && r() < 0.35) {
-        const candidatos = u.perfil === 'gestor' ? servidores.filter((s) => s.lotacao === u.unidade) : servidores
-        const s = pick(candidatos)
+      // Acessos a fichas (LGPD visível): o RH / Gestão abrindo fichas no painel.
+      if (u.perfil === 'admin' && r() < 0.35) {
+        const s = pick(servidores)
         logs.push({ ...base, origem: 'painel', id: `log-${seqLog++}`, acao: 'visualizacao', alvo: s.id, detalhe: `Ficha: ${s.nome} (${s.matricula})`, data: new Date(data.getTime() + 120000).toISOString() })
       }
     }

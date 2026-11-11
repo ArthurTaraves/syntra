@@ -2,70 +2,51 @@ import type { Documento, NivelAcesso, Origem, Perfil, Processo, Servidor, Solici
 
 // Regras de perfil do app. As MESMAS regras estão em firestore.rules (servidor),
 // porque o front-end nunca pode ser a única proteção.
-
-// ORGANIZAÇÃO EM DUAS ÁREAS (docs/PROPOSTA.md):
-//  - TOTEM ("Área do servidor"): QUALQUER perfil vê só o que é da PRÓPRIA matrícula
-//    (gestor e RH também são policiais e consultam a própria ficha ali).
-//  - PAINEL ("Site do RH"): gestor vê a própria unidade; RH vê tudo.
+//
+// UM ÚNICO SITE (totem e computador), DOIS níveis de acesso pela matrícula:
+//  - Policial (perfil "servidor"): só o que é da PRÓPRIA matrícula, em qualquer aparelho.
+//  - RH / Gestão (perfil "admin"): tudo, de todas as unidades.
+// Totem: documentos "sigiloso" nunca aparecem lá, para nenhum perfil.
 
 /** Níveis que podem aparecer no totem: sigiloso nunca é exibido lá. */
 export const NIVEIS_TOTEM: NivelAcesso[] = ['publico-interno', 'restrito']
 
+/** RH / Gestão: acesso total (painel, fichas de todos, aprovação de pedidos). */
+export const ehGestao = (u: Usuario | null | undefined): boolean => u?.perfil === 'admin'
+
 export function podeVerDocumento(usuario: Usuario, doc: Documento, origem: Origem): boolean {
-  if (origem === 'totem') return doc.matriculaServidor === usuario.matricula && doc.nivelAcesso !== 'sigiloso'
-  switch (usuario.perfil) {
-    case 'admin':
-      return true
-    case 'gestor':
-      return doc.lotacao === usuario.unidade
-    case 'servidor':
-      return (
-        doc.nivelAcesso !== 'sigiloso' &&
-        (doc.matriculaServidor === usuario.matricula || doc.nivelAcesso === 'publico-interno')
-      )
-  }
+  if (doc.nivelAcesso === 'sigiloso' && (origem === 'totem' || !ehGestao(usuario))) return false
+  return ehGestao(usuario) || doc.matriculaServidor === usuario.matricula
 }
 
-export function podeVerProcesso(usuario: Usuario, p: Processo, origem: Origem = 'painel'): boolean {
-  if (origem === 'totem' || usuario.perfil === 'servidor') return p.matriculaServidor === usuario.matricula
-  if (usuario.perfil === 'admin') return true
-  return p.lotacao === usuario.unidade
-}
+export const podeVerProcesso = (usuario: Usuario, p: Processo): boolean =>
+  ehGestao(usuario) || p.matriculaServidor === usuario.matricula
 
-export function podeVerServidor(usuario: Usuario, s: Servidor, origem: Origem = 'painel'): boolean {
-  if (origem === 'totem') return s.matricula === usuario.matricula
-  if (usuario.perfil === 'admin') return true
-  if (usuario.perfil === 'gestor') return s.lotacao === usuario.unidade
-  return s.matricula === usuario.matricula
-}
+export const podeVerServidor = (usuario: Usuario, s: Servidor): boolean =>
+  ehGestao(usuario) || s.matricula === usuario.matricula
 
-export const podeEditarDocumentos = (u: Usuario | null) => u?.perfil === 'admin'
-export const podeMovimentarProcesso = (u: Usuario, p: Processo) =>
-  u.perfil === 'admin' || (u.perfil === 'gestor' && p.lotacao === u.unidade)
-export const podeVerLogs = (u: Usuario | null) => u?.perfil === 'admin'
-export const podeGerenciarUsuarios = (u: Usuario | null) => u?.perfil === 'admin'
+export const podeEditarDocumentos = (u: Usuario | null) => ehGestao(u)
+export const podeMovimentarProcesso = (u: Usuario) => ehGestao(u)
+export const podeVerLogs = (u: Usuario | null) => ehGestao(u)
+export const podeGerenciarUsuarios = (u: Usuario | null) => ehGestao(u)
 
-/** Ver pedidos de autoatendimento: o próprio servidor, o gestor da unidade ou o RH. */
-export function podeVerSolicitacao(u: Usuario, s: Solicitacao): boolean {
-  if (u.perfil === 'admin') return true
-  if (u.perfil === 'gestor' && s.lotacao === u.unidade) return true
-  return s.matriculaServidor === u.matricula
-}
+/** Ver pedidos de autoatendimento: o próprio servidor ou o RH / Gestão. */
+export const podeVerSolicitacao = (u: Usuario, s: Solicitacao): boolean =>
+  ehGestao(u) || s.matriculaServidor === u.matricula
 
-/** Decidir: RH qualquer pedido; gestor só da própria unidade e NUNCA o próprio pedido. */
-export function podeDecidirSolicitacao(u: Usuario, s: Solicitacao): boolean {
-  if (s.status !== 'pendente') return false
-  if (u.perfil === 'admin') return true
-  return u.perfil === 'gestor' && s.lotacao === u.unidade && s.matriculaServidor !== u.matricula
-}
+/** Decidir: RH / Gestão, só pedidos pendentes e NUNCA o próprio pedido. */
+export const podeDecidirSolicitacao = (u: Usuario, s: Solicitacao): boolean =>
+  s.status === 'pendente' && ehGestao(u) && s.matriculaServidor !== u.matricula
 
-/** Painel de indicadores, alertas e talentos: gestor (sua unidade) e RH. */
-export const podeVerIndicadores = (u: Usuario | null) => u?.perfil === 'gestor' || u?.perfil === 'admin'
+/** Mensagem para quem tenta decidir o próprio pedido. */
+export const MSG_PROPRIO_PEDIDO = 'Você não pode decidir o seu próprio pedido. Ele será analisado por outra pessoa do RH / Gestão.'
+
+/** Painel de indicadores, alertas e talentos: só RH / Gestão. */
+export const podeVerIndicadores = (u: Usuario | null) => ehGestao(u)
 
 export const ROTULO_PERFIL: Record<Perfil, string> = {
-  servidor: 'Servidor',
-  gestor: 'Gestor de unidade',
-  admin: 'RH / administrador',
+  servidor: 'Policial',
+  admin: 'RH / Gestão',
 }
 
 export const ROTULO_NIVEL: Record<NivelAcesso, string> = {

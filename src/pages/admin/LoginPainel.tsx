@@ -27,7 +27,7 @@ export default function LoginPainel() {
       const u = await entrar(matricula, senha, 'painel')
       if (u.perfil === 'servidor') {
         await sair('painel')
-        setErro('O painel administrativo é restrito a gestores e administradores. Use o totem para consultar seus documentos.')
+        setErro('O painel completo é restrito ao RH / Gestão. Use o totem ou a área do servidor para consultar a sua ficha.')
         setEnviando(false)
         return
       }

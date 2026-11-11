@@ -46,7 +46,7 @@ export default function Inicio() {
   return (
     <>
       <CabecalhoPagina titulo={`Olá, ${ctx.usuario.nome.split(' ')[0]}`}
-        descricao={ctx.usuario.perfil === 'gestor' ? `Resumo dos documentos da sua unidade: ${ctx.usuario.unidade}` : 'Resumo do acervo de toda a Superintendência'} />
+        descricao="Resumo do acervo de toda a Superintendência" />
       {carregando && <Carregando />}
       {erro && <MensagemErro>{erro}</MensagemErro>}
       {dados && (

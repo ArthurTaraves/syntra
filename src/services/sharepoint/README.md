@@ -21,7 +21,7 @@ troca-se a escolha em `src/services/index.ts`. O registro automático de logs
 | `Documento` (metadados) | **Biblioteca de documentos** "Acervo Funcional" com colunas personalizadas (Tipo, NumeroProcesso, MatriculaServidor, Lotacao, LocalizacaoFisica, Status, NivelAcesso…) | O arquivo digitalizado fica na própria biblioteca; `urlArquivo` passa a ser o `webUrl` do item. |
 | `Servidor` | **Lista** "Servidores" | Pode ser sincronizada com o sistema de RH oficial. |
 | `Processo` + `historico` | **Lista** "Processos" + lista "Movimentacoes" (com coluna de pesquisa para o processo) | Ou integração direta com o SEI, se disponível. |
-| `Usuario` / perfis | **Microsoft Entra ID** (antigo Azure AD): grupos `SYNTRA-Servidores`, `SYNTRA-Gestores-<Unidade>`, `SYNTRA-Admin` | O perfil vem dos grupos do usuário, não de uma coleção própria. |
+| `Usuario` / perfis | **Microsoft Entra ID** (antigo Azure AD): grupos `SYNTRA-Policiais` e `SYNTRA-RH-Gestao` | O perfil vem dos grupos do usuário, não de uma coleção própria. |
 | `LogAcesso` | **Lista** "LogsAcesso" com permissão só de inclusão para o aplicativo | Complementada pelo log de auditoria nativo do Microsoft Purview. |
 
 ## Autenticação
@@ -45,7 +45,7 @@ troca-se a escolha em `src/services/index.ts`. O registro automático de logs
 ## Controle de acesso
 
 As regras de `firestore.rules` passam a ser garantidas pelo SharePoint:
-- **Permissões por item/pasta**: pastas por lotação, com acesso do grupo de gestores daquela unidade.
+- **Permissões por item/pasta**: cada policial lê só os itens da própria matrícula; o grupo `SYNTRA-RH-Gestao` lê tudo.
 - **Rótulos de confidencialidade (Purview)** para documentos sigilosos, que nunca são retornados ao app do totem.
 - O app do totem usa um registro de aplicativo com escopo apenas de leitura.
 

@@ -4,16 +4,14 @@ rules_version = '2';
 // (src/services/permissoes.ts), aplicadas no servidor. O front-end nunca é a única proteção.
 // Especificação: docs/PROPOSTA.md ("LGPD funcionando no back-end, não só na tela").
 //
-// Duas áreas: TOTEM ("Área do servidor": cada um vê só a própria ficha — aplicado na camada de
-// serviços) e PAINEL ("Site do RH"). As regras abaixo são o limite máximo de cada perfil.
-//
-// Perfis (coleção "usuarios/{uid}", campo "perfil"):
-//   servidor → só a PRÓPRIA ficha; envia atualizações (autoatendimento) para aprovação;
-//              documentos próprios + "publico-interno"; nunca "sigiloso"
-//   gestor   → fichas e documentos da SUA unidade; aprova atualizações da unidade
-//              (nunca o próprio pedido)
-//   admin    → RH: vê e edita tudo
-// Logs: somente inclusão; ninguém edita ou apaga; só o RH lê.
+// UM ÚNICO SITE (totem e computador) com DOIS níveis de acesso pela matrícula
+// (coleção "usuarios/{uid}", campo "perfil"):
+//   servidor → Policial: só a PRÓPRIA ficha, os próprios documentos (nunca "sigiloso"),
+//              processos e pedidos; envia atualizações (autoatendimento) para aprovação
+//   admin    → RH / Gestão: vê e edita tudo, de todas as unidades; aprova os pedidos
+//              (NINGUÉM aprova o próprio pedido)
+// Documentos "sigiloso" também não aparecem no totem (filtro na camada de serviços).
+// Logs: somente inclusão; ninguém edita ou apaga; só o RH / Gestão lê.
 
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -32,10 +30,10 @@ service cloud.firestore {
       return get(caminhoEu()).data;
     }
     function isAdmin()    { return temPerfil() && eu().perfil == 'admin'; }
-    function isGestor()   { return temPerfil() && eu().perfil == 'gestor'; }
     function isServidor() { return temPerfil() && eu().perfil == 'servidor'; }
 
-    // Matrícula: exatamente 4 dígitos (mesmo formato de src/lib/texto.ts).
+    // Matrícula: texto de exatamente 4 dígitos, zeros à esquerda contam ("0001").
+    // Mesmo formato de src/lib/texto.ts. Nunca é número.
     function matriculaValida(v) {
       return v is string && v.matches('^[0-9]{4}$');
     }
@@ -47,28 +45,15 @@ service cloud.firestore {
 
     // ---------- Usuários ----------
     match /usuarios/{uid} {
-      // Cada usuário só lê o próprio registro; o admin lê todos (aba "Usuários").
+      // Cada usuário só lê o próprio registro; o RH / Gestão lê todos (aba "Usuários").
       allow read: if (logado() && request.auth.uid == uid) || isAdmin();
       allow create, update: if isAdmin()
-        && request.resource.data.perfil in ['servidor', 'gestor', 'admin']
+        && request.resource.data.perfil in ['servidor', 'admin']
         && lotacaoValida(request.resource.data.unidade)
         && matriculaValida(request.resource.data.matricula)
-        // O admin não altera o próprio perfil (evita ficar sem administrador por engano).
+        // O RH / Gestão não altera o próprio perfil (evita ficar sem administrador por engano).
         && !(uid == request.auth.uid && request.resource.data.perfil != 'admin');
       allow delete: if false;
-    }
-
-    // ---------- Autoatendimento: aprovação no mesmo lote ----------
-    // Confere que o pedido `idSol` era do servidor `matricula`, estava "pendente" ANTES
-    // e fica "aprovada" DEPOIS do lote de gravação (getAfter).
-    function caminhoSol(idSol) {
-      return /databases/$(database)/documents/solicitacoes/$(idSol);
-    }
-    function aprovadaNoMesmoLote(idSol, matricula) {
-      return idSol is string
-        && get(caminhoSol(idSol)).data.status == 'pendente'
-        && getAfter(caminhoSol(idSol)).data.status == 'aprovada'
-        && getAfter(caminhoSol(idSol)).data.matriculaServidor == matricula;
     }
 
     // ---------- Servidores (fichas) ----------
@@ -82,29 +67,11 @@ service cloud.firestore {
     }
 
     match /servidores/{id} {
-      // Servidor: só a própria ficha · Gestor: só a sua unidade · RH: todas.
+      // Policial: só a própria ficha · RH / Gestão: todas.
       allow read: if isAdmin()
-        || (isGestor() && resource.data.lotacao == eu().unidade)
         || (temPerfil() && resource.data.matricula == eu().matricula);
-      allow create: if isAdmin() && fichaValida();
-      allow update: if (isAdmin() && fichaValida())
-        // Gestor: só aplica um pedido APROVADO da sua unidade (curso + data de atualização),
-        // nunca na própria ficha e sem tocar em nenhum outro campo.
-        || (isGestor()
-            && resource.data.lotacao == eu().unidade
-            && resource.data.matricula != eu().matricula
-            && request.resource.data.diff(resource.data).affectedKeys()
-                 .hasOnly(['capacitacoes', 'fichaAtualizadaEm', 'ultimaSolicitacaoAprovada'])
-            && aprovadaNoMesmoLote(request.resource.data.ultimaSolicitacaoAprovada, resource.data.matricula));
+      allow create, update: if isAdmin() && fichaValida();
       allow delete: if false;
-    }
-
-    // ---------- Estatísticas agregadas (só números, sem dados pessoais) ----------
-    // Ex.: estatisticas/competencias = { contagem: { "Libras": 2, ... } }, usada pelo alerta de
-    // risco do gestor para medir raridade sem ler fichas de outras unidades.
-    match /estatisticas/{id} {
-      allow read: if isGestor() || isAdmin();
-      allow write: if isAdmin();
     }
 
     // ---------- Solicitações de autoatendimento ----------
@@ -121,23 +88,20 @@ service cloud.firestore {
 
     match /solicitacoes/{id} {
       allow read: if isAdmin()
-        || (isGestor() && resource.data.lotacao == eu().unidade)
         || (temPerfil() && resource.data.matriculaServidor == eu().matricula);
       // Cada um envia pedidos SOMENTE em seu próprio nome, sempre "pendente".
       allow create: if temPerfil() && solicitacaoNovaValida();
-      // Decisão: só de "pendente" para "aprovada"/"recusada", registrando quem decidiu.
-      // Recusa exige motivo. Gestor: só da sua unidade e nunca o próprio pedido.
-      allow update: if resource.data.status == 'pendente'
+      // Decisão: só o RH / Gestão, só de "pendente" para "aprovada"/"recusada", registrando quem
+      // decidiu. Recusa exige motivo. NINGUÉM decide o próprio pedido.
+      allow update: if isAdmin()
+        && resource.data.matriculaServidor != eu().matricula
+        && resource.data.status == 'pendente'
         && request.resource.data.status in ['aprovada', 'recusada']
         && request.resource.data.decididaPorUid == request.auth.uid
         && request.resource.data.diff(resource.data).affectedKeys()
              .hasOnly(['status', 'decididaEm', 'decididaPorUid', 'decididaPorNome', 'motivoRecusa'])
         && (request.resource.data.status == 'aprovada'
-            || (request.resource.data.motivoRecusa is string && request.resource.data.motivoRecusa.size() > 0))
-        && (isAdmin()
-            || (isGestor()
-                && resource.data.lotacao == eu().unidade
-                && resource.data.matriculaServidor != eu().matricula));
+            || (request.resource.data.motivoRecusa is string && request.resource.data.motivoRecusa.size() > 0));
       allow delete: if false;
     }
 
@@ -157,40 +121,21 @@ service cloud.firestore {
     }
 
     match /documentos/{id} {
+      // Policial: só os próprios documentos, e "sigiloso" nunca. RH / Gestão: todos.
       allow read: if isAdmin()
-        || (isGestor() && resource.data.lotacao == eu().unidade)
-        // "sigiloso" nunca é retornado para o perfil servidor.
         || (isServidor()
-            && resource.data.nivelAcesso in ['publico-interno', 'restrito']
-            && (resource.data.matriculaServidor == eu().matricula
-                || resource.data.nivelAcesso == 'publico-interno'));
-      // Cadastrar, editar e arquivar: somente o RH. Apagar: ninguém (usa-se "arquivar").
+            && resource.data.matriculaServidor == eu().matricula
+            && resource.data.nivelAcesso in ['publico-interno', 'restrito']);
+      // Cadastrar, editar e arquivar: somente o RH / Gestão. Apagar: ninguém (usa-se "arquivar").
       allow create, update: if isAdmin() && documentoValido();
-      // Gestor: só cria o comprovante de um pedido APROVADO da sua unidade (mesmo lote),
-      // sempre restrito, sem nº de processo e nunca para si mesmo.
-      allow create: if isGestor()
-        && documentoValido()
-        && request.resource.data.origemCadastro == 'autoatendimento'
-        && request.resource.data.nivelAcesso == 'restrito'
-        && request.resource.data.numeroProcesso == ''
-        && request.resource.data.lotacao == eu().unidade
-        && request.resource.data.matriculaServidor != eu().matricula
-        && aprovadaNoMesmoLote(request.resource.data.solicitacaoId, request.resource.data.matriculaServidor);
       allow delete: if false;
     }
 
     // ---------- Processos ----------
     match /processos/{id} {
       allow read: if isAdmin()
-        || (isGestor() && resource.data.lotacao == eu().unidade)
         || (isServidor() && resource.data.matriculaServidor == eu().matricula);
-      allow create: if isAdmin();
-      // Gestor da unidade pode registrar movimentações (histórico, unidade atual e situação).
-      allow update: if isAdmin()
-        || (isGestor()
-            && resource.data.lotacao == eu().unidade
-            && request.resource.data.diff(resource.data).affectedKeys()
-                 .hasOnly(['historico', 'unidadeAtual', 'situacao']));
+      allow create, update: if isAdmin();
       allow delete: if false;
     }
 
@@ -230,7 +175,7 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
-    // Qualquer outra coleção: bloqueada.
+    // Qualquer outra coleção (inclusive a antiga "estatisticas"): bloqueada.
     match /{caminho=**} {
       allow read, write: if false;
     }

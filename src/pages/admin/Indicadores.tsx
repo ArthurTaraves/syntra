@@ -5,7 +5,7 @@ import { CabecalhoPagina, Cartao } from '../../components/painel/ui'
 import { GRUPO_MINIMO_PRIVACIDADE, HORIZONTE_APOSENTADORIA_ANOS } from '../../config/regrasRH'
 import { useContextoAcesso } from '../../hooks/useAuth'
 import { useCarregar } from '../../hooks/useCarregar'
-import { calcularAlertas, calcularAposentadoria, MSG_DADOS_INSUFICIENTES, protegerLista, textoAtualizacao, valorProtegido, type AlertaUnidade, type NivelRisco } from '../../lib/rh'
+import { calcularAlertas, calcularAposentadoria, contarCompetencias, MSG_DADOS_INSUFICIENTES, protegerLista, textoAtualizacao, valorProtegido, type AlertaUnidade, type NivelRisco } from '../../lib/rh'
 import { servicos } from '../../services'
 import { AREAS_CAPACITACAO, LOTACOES, type Lotacao } from '../../types'
 
@@ -96,12 +96,14 @@ function CardAlerta({ a }: { a: AlertaUnidade }) {
 /** Painel de indicadores de pessoal + alerta de risco por unidade (proposta, seções "Painel" e "Diferenciais"). */
 export default function Indicadores() {
   const ctx = useContextoAcesso('painel')
-  const gestor = ctx.usuario.perfil === 'gestor'
-  const unidades: readonly Lotacao[] = gestor ? [ctx.usuario.unidade] : LOTACOES
+  // O RH / Gestão vê todas as unidades: indicadores e alertas sempre da Superintendência inteira.
+  const unidades: readonly Lotacao[] = LOTACOES
 
   const { dados, carregando, erro } = useCarregar(async () => {
-    const [servidores, contagem] = await Promise.all([servicos.servidores.listar(ctx), servicos.servidores.contagemCompetencias(ctx)])
-    return { servidores: servidores.filter((s) => s.situacao !== 'aposentado'), contagem }
+    const todos = await servicos.servidores.listar(ctx)
+    // Raridade de cada competência: contada em TODA a Superintendência (só servidores ativos).
+    const contagem = Object.fromEntries(contarCompetencias(todos))
+    return { servidores: todos.filter((s) => s.situacao !== 'aposentado'), contagem }
   }, [ctx])
 
   const r = useMemo(() => {
@@ -140,7 +142,7 @@ export default function Indicadores() {
   return (
     <>
       <CabecalhoPagina titulo="Indicadores de pessoal"
-        descricao={gestor ? `Unidade: ${ctx.usuario.unidade}` : 'Toda a Superintendência · números prontos, sem montagem manual'} />
+        descricao="Todas as unidades da Superintendência · números prontos, sem montagem manual" />
       {carregando && <Carregando texto="Calculando indicadores…" />}
       {erro && <MensagemErro>{erro}</MensagemErro>}
       {r && (

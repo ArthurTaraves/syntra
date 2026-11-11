@@ -11,7 +11,7 @@ Protótipo acadêmico · Superintendência Regional da Polícia Rodoviária Fede
 
 ## Objetivo
 
-Ser um **sistema único de gestão de pessoas e documentos**, em que tudo fica ligado à matrícula do servidor, como um prontuário. Funciona no computador e num **totem de consulta** (tela touch em ponto fixo da unidade), com controle de acesso por perfil e LGPD aplicada também no back-end.
+Ser um **sistema único de gestão de pessoas e documentos**, em que tudo fica ligado à matrícula do servidor, como um prontuário. É **um único site**, usado no computador e num **totem de consulta** (tela touch em ponto fixo da unidade), com **dois níveis de acesso pela matrícula** e LGPD aplicada também no back-end.
 
 ## Problema
 
@@ -37,7 +37,7 @@ Toda ficha mostra **“Ficha atualizada há X meses”**, em amarelo quando pass
 - **Indicadores**: servidores por unidade, **próximos da aposentadoria (5 anos)** por unidade e por prazo, e capacitações por área.
 - **Alerta de risco por unidade** (verde, amarelo ou vermelho): cruza as aposentadorias previstas com as competências e mostra as unidades que podem perder pessoas ou **competências raras**.
 - **Busca de talentos com filtros combinados**: curso ou competência, tempo de casa, unidade e indicação. Exemplo: “Instrutor de tiro + mais de 10 anos + Superintendência”.
-- **Autoatendimento**: o servidor envia um curso ou documento pela própria ficha (totem ou computador). O pedido fica **pendente** até o gestor da unidade ou o RH aprovar ou recusar (recusa exige motivo). Ao aprovar, a ficha é atualizada e a data muda.
+- **Autoatendimento**: o servidor envia um curso ou documento pela própria ficha (totem ou computador). O pedido fica **pendente** até o RH / Gestão aprovar ou recusar (recusa exige motivo; **ninguém decide o próprio pedido**). Ao aprovar, a ficha é atualizada e a data muda.
 - **LGPD visível**: o RH vê, na própria ficha, **quem a acessou e quando**. Os indicadores agregados **não mostram grupos com menos de 5 pessoas** (“dados insuficientes para preservar a privacidade”).
 
 ### Regras configuráveis
@@ -48,25 +48,31 @@ Tudo fica num único arquivo, [`src/config/regrasRH.ts`](src/config/regrasRH.ts)
 - o grupo mínimo para os relatórios;
 - o tempo de saída do totem.
 
-### Duas áreas separadas
-| Área | Quem usa | O que se vê |
-|---|---|---|
-| **Totem = Área do servidor** (`/totem`) | Qualquer policial (servidor, gestor e RH também) | **Só a própria ficha** |
-| **Site do RH = painel** (`/admin`), no computador | Gestor de unidade e RH | Gestor: a própria unidade · RH: tudo |
+### Um único site, dois níveis de acesso
+O mesmo sistema roda no computador (teclado e mouse) e no totem (toque); só muda o formato da tela. O que cada pessoa vê depende do nível da sua matrícula:
 
-### Totem: Área do servidor (`/totem`)
-- Tela de descanso com data e hora, botão **“Toque para começar”** e link discreto **“Acesso do RH (painel)”**.
+| Nível | Totem e computador (`/totem`) | Painel completo (`/admin`) |
+|---|---|---|
+| **Policial** | **Só a própria ficha**: menu do policial | Não entra |
+| **RH / Gestão** | Menu do policial + **Fichas dos servidores**, **Pedidos para aprovar** (com contador) e **Abrir painel completo** | Tudo, de **todas as unidades** |
+
+### Totem (`/totem`)
+- Tela de descanso com data e hora, botão **“Toque para começar”** e link discreto **“Acesso do RH / Gestão (painel)”**.
 - Login obrigatório, com **matrícula de 4 dígitos** e senha.
   - Na tela de toque, usa um teclado virtual próprio.
   - No computador, aceita o teclado físico.
 - **Bloqueio de 30 s após 5 tentativas erradas.**
-- **Menu igual para todos os perfis:**
+- **Menu do policial** (nos dois níveis, cada um vê a **própria** ficha):
   - **Minha ficha** (5 blocos, sem CPF);
   - **Meus documentos e processos** (com a **localização física em destaque** e a linha do tempo dos processos);
   - **Enviar curso ou documento**;
   - **Minhas solicitações**;
   - **Imprimir extrato da ficha**.
-- **Faixa de escopo** abaixo do “Olá”: “Aqui você consulta apenas a sua ficha”. Para gestor e RH, também: “Para gerenciar servidores, use o painel do RH no computador”.
+- **Só para RH / Gestão**, numa seção à parte do menu:
+  - **Fichas dos servidores**: busca por matrícula (4 dígitos) ou nome, em todas as unidades; ficha em 5 blocos, sem CPF;
+  - **Pedidos para aprovar**: com contador; aprovar ou recusar com motivo. O próprio pedido não aparece (ninguém aprova o próprio pedido);
+  - **Abrir painel completo**: vai para `/admin`. Aberto a partir do totem, o painel também encerra após 2 minutos sem uso.
+- **Faixa abaixo do “Olá”**: Policial → “Aqui você consulta a sua ficha”. RH / Gestão → “Você também pode consultar e aprovar todos os servidores da PRF-PI”.
 - **Extrato da ficha:**
   - o policial escolhe as seções e imprime em **A4**;
   - sai com cabeçalho da PRF-PI, data e hora e o aviso “Documento informativo, sem valor de declaração oficial”;
@@ -74,55 +80,48 @@ Tudo fica num único arquivo, [`src/config/regrasRH.ts`](src/config/regrasRH.ts)
   - **sem CPF**;
   - cada impressão fica registrada no log.
 - **Verificação pública** em `/verificar/CODIGO`: mostra se o extrato é válido, nome, matrícula, data e seções impressas.
-- **Saída automática após 2 minutos sem uso**, com contagem regressiva nos últimos 15 s. O botão **Sair** fica sempre visível.
+- **Saída automática após 2 minutos sem uso**, com contagem regressiva nos últimos 15 s. O botão **Sair** fica sempre visível. Os acessos feitos aqui ficam no log com origem **“totem”**.
 - O cabeçalho mostra o nome e o perfil. Documentos **sigilosos nunca aparecem no totem**.
 
-### Site do RH: painel (`/admin`), gestor de unidade e RH
-A busca por **matrícula ou nome** fica em “Fichas dos servidores”. A busca por **nº de processo**, com ou sem pontuação, fica em “Processos” e “Documentos”.
-| Aba | Gestor | RH |
-|---|:-:|:-:|
-| **Indicadores e alertas** | ✔ (sua unidade) | ✔ |
-| **Busca de talentos** | ✔ (sua unidade) | ✔ |
-| **Fichas dos servidores** (5 blocos, documentos, processos) | ✔ (sua unidade) | ✔ |
-| **“Quem acessou esta ficha”** | – | ✔ |
-| **Solicitações** (aprovar/recusar autoatendimento) | ✔ (sua unidade, nunca o próprio pedido) | ✔ |
-| **Documentos**: busca e filtros | ✔ | ✔ |
-| Cadastrar, editar e arquivar documento | – | ✔ |
-| **Processos**: linha do tempo e movimentação | ✔ | ✔ |
-| **Relatórios do acervo** (Exportar PDF) | ✔ | ✔ |
-| **Logs de acesso** (exportação CSV) e **Usuários** | – | ✔ |
+### Painel completo (`/admin`): só RH / Gestão
+Vale para todas as unidades. A busca por **matrícula ou nome** fica em “Fichas dos servidores”. A busca por **nº de processo**, com ou sem pontuação, fica em “Processos” e “Documentos”.
+- **Indicadores e alertas** (todas as unidades) e **Busca de talentos**;
+- **Fichas dos servidores** (5 blocos, documentos, processos) com **“Quem acessou esta ficha”**;
+- **Solicitações** (aprovar/recusar autoatendimento; nunca o próprio pedido);
+- **Documentos** (busca, filtros, cadastro, edição e arquivamento) e **Processos** (linha do tempo e movimentação);
+- **Relatórios do acervo** (Exportar PDF), **Logs de acesso** (exportação CSV) e **Usuários**.
+
+Também funciona em **tela de toque**: botões e campos com área de toque maior quando o aparelho é touch, e tabelas com rolagem horizontal.
 
 ### Segurança e LGPD
 - **Toda consulta, visualização, download e edição gera um registro de acesso** (`LogAcesso`), inclusive as buscas sem resultado e as buscas de talentos.
-- As regras de acesso valem **também no servidor** (`firestore.rules`): fichas por perfil e unidade, pedidos de autoatendimento criados só em nome próprio e aprovação conferida no mesmo lote de gravação.
-- Logs só podem ser **criados**, nunca editados nem apagados. Só o RH lê.
+- As regras de acesso valem **também no servidor** (`firestore.rules`): o Policial só lê a própria ficha, documentos (nunca sigilosos), processos e pedidos; pedidos de autoatendimento são criados só em nome próprio; só o RH / Gestão decide, e nunca o próprio pedido.
+- Logs só podem ser **criados**, nunca editados nem apagados. Só o RH / Gestão lê.
 - O **CPF fica sempre mascarado**. A página `/privacidade` explica quais dados são tratados, para quê e quem acessa.
 
 ## Perfis de acesso
 
 | Perfil | O que vê e faz |
 |---|---|
-| **Servidor** | No totem: só a **própria ficha**, os próprios documentos e processos; envia atualizações para aprovação e imprime o extrato. Não acessa o painel. |
-| **Gestor de unidade** | No painel: só os servidores da **própria unidade**; **aprova atualizações** da unidade (nunca o próprio pedido). No totem: só a própria ficha, como qualquer policial. |
-| **RH / administrador** | No painel: **vê e edita tudo**, incluindo logs, usuários e cadastro de documentos. No totem: só a própria ficha. |
+| **Policial** (`servidor`) | No totem e no computador: só a **própria ficha**, os próprios documentos, processos e pedidos; envia atualizações para aprovação e imprime o extrato. Não acessa o painel. |
+| **RH / Gestão** (`admin`) | **Vê e edita tudo, de todas as unidades**: fichas, aprovação de pedidos (**nunca o próprio**), indicadores, talentos, documentos, processos, relatórios, logs e usuários. No totem: menu do policial + fichas, pedidos e painel completo. |
 
 ## Contas de demonstração
 
-Senha de todas: **`syntra123`**. Todas se chamam “Camila”; o perfil aparece ao lado do nome no cabeçalho.
+Senha das duas: **`syntra123`**. Ambas se chamam “Camila”; o perfil aparece ao lado do nome no cabeçalho.
 
 | Matrícula | Perfil | Unidade |
 |---|---|---|
-| **1001** | Servidor | Delegacia de Teresina |
-| **1002** | Gestor de unidade | Delegacia de Parnaíba |
-| **1003** | RH / administrador | Superintendência – Teresina |
+| **0001** | Policial | Delegacia de Teresina |
+| **0002** | RH / Gestão | Superintendência – Teresina |
 
-**Matrículas têm exatamente 4 dígitos**: os demais servidores fictícios vão de 1004 a 1030. Uma matrícula com outro tamanho mostra “A matrícula tem 4 dígitos” e não conta como tentativa errada.
+**Matrículas são sempre texto de exatamente 4 dígitos, e os zeros à esquerda contam** (“0001” não é “1”). Os demais servidores fictícios vão de 0003 a 0030. Uma matrícula com outro tamanho mostra “A matrícula tem 4 dígitos” e não conta como tentativa errada.
 
 O acervo fictício tem **30 servidores, 120 documentos, 40 processos e 6 solicitações** em 6 lotações do Piauí, além de registros de acesso de exemplo dos últimos 30 dias. O cenário foi montado para a demonstração:
-- **Delegacia de Parnaíba** (a da gestora 1002) e **Corrente** em **vermelho**: perdem competências raras com aposentadorias previstas.
+- **Delegacia de Parnaíba** e **Corrente** em **vermelho**: perdem competências raras com aposentadorias previstas.
 - **Superintendência** e **Picos** em **amarelo**.
 - **Teresina** e **Floriano** em **verde**.
-- Parnaíba tem pedidos de autoatendimento pendentes para a gestora aprovar.
+- Parnaíba e Teresina têm pedidos de autoatendimento pendentes para o RH / Gestão aprovar. A Camila 0002 também tem um pedido próprio pendente, que ela **não** pode aprovar.
 
 ## Como rodar
 

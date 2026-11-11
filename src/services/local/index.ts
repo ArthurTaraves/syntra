@@ -5,12 +5,20 @@
 
 import { gerarSeed, SENHA_DEMO, type DadosSeed } from '../../data/seed'
 import { hojeISO, MSG_MATRICULA_INVALIDA, PADRAO_MATRICULA, somenteDigitos } from '../../lib/texto'
-import { contarCompetencias } from '../../lib/rh'
 import type { Documento, LogAcesso, Solicitacao, Usuario } from '../../types'
 import { efeitoDaAprovacao, validarSolicitacao } from '../autoatendimento'
 import { normalizarCodigo, novoExtrato } from '../extratos'
 import { aplicarFiltros } from '../filtros'
-import { podeDecidirSolicitacao, podeVerDocumento, podeVerProcesso, podeVerServidor, podeVerSolicitacao } from '../permissoes'
+import {
+  ehGestao,
+  MSG_PROPRIO_PEDIDO,
+  podeDecidirSolicitacao,
+  podeMovimentarProcesso,
+  podeVerDocumento,
+  podeVerProcesso,
+  podeVerServidor,
+  podeVerSolicitacao,
+} from '../permissoes'
 import { ErroServico, type Contexto, type DataProvider } from '../tipos'
 
 // Versão do acervo local. Ao mudar os dados fictícios, suba a versão: o navegador descarta
@@ -18,7 +26,8 @@ import { ErroServico, type Contexto, type DataProvider } from '../tipos'
 //   v2 = matrículas de 4 dígitos · v3 = conta única · v4 = proposta oficial (3 contas Camila,
 //   ficha em 5 blocos, solicitações de autoatendimento, cenário de aposentadorias e alertas)
 //   v5 = totem como "Área do servidor" (só a própria ficha) e extratos com código de verificação
-const VERSAO = 'v5'
+//   v6 = dois níveis de acesso (0001 Policial · 0002 RH / Gestão) e servidores fictícios 0003–0030
+const VERSAO = 'v6'
 const PREFIXO = 'syntra:demo:'
 const CHAVE_DADOS = `${PREFIXO}dados:${VERSAO}`
 const CHAVE_SENHAS = `${PREFIXO}senhas:${VERSAO}`
@@ -95,7 +104,7 @@ export function criarProviderLocal(): DataProvider {
   }
 
   const exigirAdmin = (ctx: Contexto) => {
-    if (ctx.usuario.perfil !== 'admin') throw new ErroServico('Você não tem permissão para esta ação.', 'permissao')
+    if (!ehGestao(ctx.usuario)) throw new ErroServico('Você não tem permissão para esta ação.', 'permissao')
   }
   const docPorId = (id: string) => {
     const d = estado.documentos.find((x) => x.id === id)
@@ -195,19 +204,15 @@ export function criarProviderLocal(): DataProvider {
         await espera()
         return clonar(
           estado.servidores
-            .filter((s) => podeVerServidor(ctx.usuario, s, ctx.origem))
+            .filter((s) => podeVerServidor(ctx.usuario, s))
             .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR')),
         )
       },
       async obterPorMatricula(matricula, ctx) {
         await espera()
+        // Matrícula é texto de 4 dígitos: "0003" ≠ "3" (zeros à esquerda contam).
         const s = estado.servidores.find((x) => x.matricula === matricula)
-        return s && podeVerServidor(ctx.usuario, s, ctx.origem) ? clonar(s) : null
-      },
-      async contagemCompetencias(ctx) {
-        if (ctx.usuario.perfil === 'servidor') throw new ErroServico('Você não tem permissão para esta ação.', 'permissao')
-        // Só números agregados: nenhuma ficha de outra unidade é exposta ao gestor.
-        return Object.fromEntries(contarCompetencias(estado.servidores))
+        return s && podeVerServidor(ctx.usuario, s) ? clonar(s) : null
       },
     },
 
@@ -272,9 +277,7 @@ export function criarProviderLocal(): DataProvider {
         if (sol.status !== 'pendente') throw new ErroServico('Esta solicitação já foi decidida.', 'validacao')
         if (!podeDecidirSolicitacao(ctx.usuario, sol))
           throw new ErroServico(
-            sol.matriculaServidor === ctx.usuario.matricula
-              ? 'Você não pode decidir o seu próprio pedido. Ele será analisado pelo RH.'
-              : 'Você não tem permissão para decidir esta solicitação.',
+            sol.matriculaServidor === ctx.usuario.matricula ? MSG_PROPRIO_PEDIDO : 'Você não tem permissão para decidir esta solicitação.',
             'permissao',
           )
         if (decisao === 'recusada' && !motivoRecusa?.trim()) throw new ErroServico('Informe o motivo da recusa.', 'validacao')
@@ -309,24 +312,23 @@ export function criarProviderLocal(): DataProvider {
     processos: {
       async listar(ctx) {
         await espera()
-        return clonar(estado.processos.filter((p) => podeVerProcesso(ctx.usuario, p, ctx.origem)))
+        return clonar(estado.processos.filter((p) => podeVerProcesso(ctx.usuario, p)))
       },
       async obterPorId(id, ctx) {
         await espera()
         const p = estado.processos.find((x) => x.id === id)
-        return p && podeVerProcesso(ctx.usuario, p, ctx.origem) ? clonar(p) : null
+        return p && podeVerProcesso(ctx.usuario, p) ? clonar(p) : null
       },
       async obterPorNumero(numero, ctx) {
         const alvo = somenteDigitos(numero)
         const p = estado.processos.find((x) => somenteDigitos(x.numeroProcesso) === alvo)
-        return p && podeVerProcesso(ctx.usuario, p, ctx.origem) ? clonar(p) : null
+        return p && podeVerProcesso(ctx.usuario, p) ? clonar(p) : null
       },
       async adicionarMovimentacao(id, mov, novaSituacao, ctx) {
         await espera()
         const p = estado.processos.find((x) => x.id === id)
         if (!p) throw new ErroServico('Processo não encontrado.', 'nao-encontrado')
-        const pode = ctx.usuario.perfil === 'admin' || (ctx.usuario.perfil === 'gestor' && p.lotacao === ctx.usuario.unidade)
-        if (!pode) throw new ErroServico('Você não tem permissão para movimentar este processo.', 'permissao')
+        if (!podeMovimentarProcesso(ctx.usuario)) throw new ErroServico('Você não tem permissão para movimentar este processo.', 'permissao')
         p.historico.push(mov)
         p.unidadeAtual = mov.unidade
         if (novaSituacao) p.situacao = novaSituacao

@@ -2,6 +2,7 @@ import { Home, LogOut, UserCircle2 } from 'lucide-react'
 import { Link, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
 import { useRelogio } from '../../hooks/useRelogio'
+import { limparPainelPeloTotem } from '../../lib/sessaoTotem'
 import { ROTULO_PERFIL } from '../../services'
 import { Logo } from '../Logo'
 
@@ -13,6 +14,7 @@ export function TotemLogado() {
 
   const encerrar = async () => {
     await sair('totem').catch(() => undefined)
+    limparPainelPeloTotem()
     navigate('/totem', { replace: true })
   }
 

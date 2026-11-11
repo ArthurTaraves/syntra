@@ -57,15 +57,10 @@ export interface DocumentosService {
 }
 
 export interface ServidoresService {
-  /** Servidor: só a própria ficha · Gestor: só a sua unidade · RH: todos. */
+  /** Policial: só a própria ficha · RH / Gestão: todas. */
   listar(ctx: Contexto): Promise<Servidor[]>
   /** Abre a ficha (gera log de visualização). */
   obterPorMatricula(matricula: string, ctx: Contexto): Promise<Servidor | null>
-  /**
-   * Quantas pessoas têm cada competência em TODA a Superintendência (só números, sem nomes).
-   * Usado pelo alerta de risco para medir raridade sem expor fichas de outras unidades.
-   */
-  contagemCompetencias(ctx: Contexto): Promise<Record<string, number>>
 }
 
 export interface FiltrosSolicitacao {
@@ -73,15 +68,15 @@ export interface FiltrosSolicitacao {
   matriculaServidor?: string
 }
 
-/** Autoatendimento: o servidor envia; gestor da unidade ou RH aprova/recusa. */
+/** Autoatendimento: o servidor envia; o RH / Gestão aprova/recusa. */
 export interface SolicitacoesService {
-  /** Servidor: as próprias · Gestor: as da unidade · RH: todas. Mais recentes primeiro. */
+  /** Policial: as próprias · RH / Gestão: todas. Mais recentes primeiro. */
   listar(filtros: FiltrosSolicitacao, ctx: Contexto): Promise<Solicitacao[]>
   /** Sempre em nome do próprio usuário logado (matrícula e unidade dele), com status "pendente". */
   criar(dados: NovaSolicitacao, ctx: Contexto): Promise<Solicitacao>
   /**
    * Aprova ou recusa. Ao aprovar, aplica na ficha (curso/documento) e atualiza `fichaAtualizadaEm`.
-   * Gestor só decide pedidos da própria unidade e nunca o próprio pedido.
+   * Só o RH / Gestão decide, e ninguém decide o próprio pedido.
    */
   decidir(id: string, decisao: 'aprovada' | 'recusada', motivoRecusa: string | undefined, ctx: Contexto): Promise<Solicitacao>
 }

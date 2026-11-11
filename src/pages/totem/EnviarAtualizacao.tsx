@@ -55,7 +55,7 @@ export default function EnviarAtualizacao() {
         <CheckCircle2 className="size-24 text-emerald-700" aria-hidden />
         <h1 className="text-4xl font-extrabold text-marinho-900">Enviado para aprovação</h1>
         <p className="text-2xl text-marinho-700">
-          Seu pedido está <strong>pendente</strong>. Quando o gestor da unidade ou o RH aprovar, ele entra na sua ficha e a data de atualização muda.
+          Seu pedido está <strong>pendente</strong>. Quando o RH / Gestão aprovar, ele entra na sua ficha e a data de atualização muda.
         </p>
         <Link to="/totem/minha-ficha" className="flex min-h-20 items-center rounded-2xl bg-marinho-800 px-10 text-2xl font-bold text-white active:bg-marinho-700">
           Voltar para minha ficha
@@ -74,7 +74,7 @@ export default function EnviarAtualizacao() {
 
   return (
     <>
-      <TituloTotem titulo="Enviar atualização" subtitulo="O pedido fica pendente até a aprovação do gestor da unidade ou do RH." voltarPara="/totem/minha-ficha" />
+      <TituloTotem titulo="Enviar atualização" subtitulo="O pedido fica pendente até a aprovação do RH / Gestão." voltarPara="/totem/minha-ficha" />
       <form onSubmit={enviar} className="mx-auto flex max-w-4xl flex-col gap-6 rounded-3xl bg-white p-6 shadow-md ring-1 ring-marinho-100" noValidate>
         <div className="flex flex-col gap-3 sm:flex-row">
           {opcao('capacitacao', 'Curso ou capacitação', Award)}

@@ -75,11 +75,6 @@ async function main() {
     dados.logs.map((l) => ({ ...l, registradoEm: new Date(l.data) })),
   )
   await gravarEmLotes('solicitacoes', dados.solicitacoes)
-  // Contagem agregada de competências (só números), lida pelo alerta de risco dos gestores.
-  const contagem: Record<string, number> = {}
-  dados.servidores.forEach((s) => s.competencias.forEach((c) => (contagem[c] = (contagem[c] ?? 0) + 1)))
-  await db.collection('estatisticas').doc('competencias').set({ contagem, atualizadoEm: new Date().toISOString() })
-  console.log('  ✔ estatisticas/competencias')
   console.log('Pronto!')
 }
 

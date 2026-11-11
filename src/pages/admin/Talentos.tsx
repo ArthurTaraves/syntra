@@ -15,7 +15,6 @@ const ANOS = [0, 5, 10, 15, 20, 25]
 /** Banco de talentos: filtros combinados (curso/competência + tempo de casa + unidade + indicação). */
 export default function Talentos() {
   const ctx = useContextoAcesso('painel')
-  const gestor = ctx.usuario.perfil === 'gestor'
   const [termo, setTermo] = useState('')
   const [anos, setAnos] = useState(0)
   const [unidade, setUnidade] = useState<Lotacao | ''>('')
@@ -50,7 +49,7 @@ export default function Talentos() {
   return (
     <>
       <CabecalhoPagina titulo="Busca de talentos"
-        descricao={`Encontre perfis para movimentações, capacitações e lideranças combinando critérios.${gestor ? ` Resultados da sua unidade (${ctx.usuario.unidade}).` : ''}`} />
+        descricao="Encontre perfis para movimentações, capacitações e lideranças combinando critérios, em todas as unidades." />
 
       <form onSubmit={buscar} className="mb-6 grid grid-cols-1 gap-3 rounded-xl bg-white p-4 ring-1 ring-marinho-100 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_1.4fr_1fr_auto] lg:items-end">
         <Campo rotulo="Curso ou competência">
@@ -63,14 +62,10 @@ export default function Talentos() {
           </Selecao>
         </Campo>
         <Campo rotulo="Unidade">
-          {gestor ? (
-            <Entrada value={ctx.usuario.unidade} disabled />
-          ) : (
-            <Selecao value={unidade} onChange={(e) => setUnidade(e.target.value as Lotacao | '')}>
-              <option value="">Todas</option>
-              {LOTACOES.map((l) => <option key={l}>{l}</option>)}
-            </Selecao>
-          )}
+          <Selecao value={unidade} onChange={(e) => setUnidade(e.target.value as Lotacao | '')}>
+            <option value="">Todas</option>
+            {LOTACOES.map((l) => <option key={l}>{l}</option>)}
+          </Selecao>
         </Campo>
         <Campo rotulo="Indicação">
           <Selecao value={indicacao} onChange={(e) => setIndicacao(e.target.value)}>
@@ -79,7 +74,7 @@ export default function Talentos() {
           </Selecao>
         </Campo>
         <div className="flex gap-2">
-          <Botao type="submit" className="min-h-[38px]"><Search className="size-4" /> Buscar</Botao>
+          <Botao type="submit"><Search className="size-4" /> Buscar</Botao>
           {resultado && <Botao variante="fantasma" onClick={limpar} aria-label="Limpar filtros"><X className="size-4" /></Botao>}
         </div>
       </form>

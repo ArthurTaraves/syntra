@@ -85,8 +85,8 @@ export default function Usuarios() {
         acoes={<Botao variante="destaque" onClick={() => setCriando(true)}><UserPlus className="size-4" /> Novo usuário</Botao>} />
       {msg && <div className="mb-4"><Aviso tipo={msg.tipo}>{msg.texto}</Aviso></div>}
       <Aviso>
-        <strong>Servidor</strong>: vê os próprios documentos e os de nível público interno. <strong>Gestor</strong>: vê os documentos da sua unidade e acessa o painel.{' '}
-        <strong>Administrador</strong>: acesso total, cadastro de documentos, logs e usuários.
+        <strong>Policial</strong>: no totem e no computador, vê só a própria ficha, os próprios documentos e pedidos; não entra no painel.{' '}
+        <strong>RH / Gestão</strong>: acesso total, de todas as unidades: fichas, aprovação de pedidos (nunca os próprios), documentos, logs e usuários.
       </Aviso>
       <div className="mt-4">
         {carregando ? <Carregando /> : erro ? <MensagemErro>{erro}</MensagemErro> : (

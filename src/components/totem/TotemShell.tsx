@@ -4,6 +4,7 @@ import { useCallback } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
 import { useInatividade } from '../../hooks/useInatividade'
+import { limparPainelPeloTotem } from '../../lib/sessaoTotem'
 
 // Tempos configuráveis em src/config/regrasRH.ts (proposta: saída automática após 1 a 2 minutos).
 export const LIMITE_INATIVIDADE_S = TOTEM_INATIVIDADE_SEGUNDOS
@@ -21,6 +22,7 @@ export function TotemShell() {
 
   const expirar = useCallback(async () => {
     if (usuario) await sair('totem').catch(() => undefined)
+    limparPainelPeloTotem()
     navigate('/totem', { replace: true })
   }, [usuario, sair, navigate])
 

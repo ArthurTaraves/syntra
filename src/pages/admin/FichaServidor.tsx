@@ -8,6 +8,7 @@ import { CabecalhoPagina, Cartao, Tabela } from '../../components/painel/ui'
 import { ALERTA_RISCO } from '../../config/regrasRH'
 import { useContextoAcesso } from '../../hooks/useAuth'
 import { useCarregar } from '../../hooks/useCarregar'
+import { contarCompetencias } from '../../lib/rh'
 import { formatarData, formatarDataHora } from '../../lib/texto'
 import { podeVerLogs, servicos } from '../../services'
 
@@ -21,21 +22,22 @@ export default function FichaServidor() {
     // obterPorMatricula registra no log "quem acessou esta ficha".
     const servidor = await servicos.servidores.obterPorMatricula(matricula, ctx)
     if (!servidor) return null
-    const [documentos, processos, solicitacoes, contagem] = await Promise.all([
+    const [documentos, processos, solicitacoes, todos] = await Promise.all([
       servicos.documentos.buscar({ matriculaServidor: matricula }, ctx, { registrar: false }),
       servicos.processos.listar(ctx).then((ps) => ps.filter((p) => p.matriculaServidor === matricula)),
       servicos.solicitacoes.listar({ matriculaServidor: matricula }, ctx),
-      servicos.servidores.contagemCompetencias(ctx).catch(() => ({}) as Record<string, number>),
+      // O RH / Gestão vê todas as fichas: a raridade é calculada sobre toda a Superintendência.
+      servicos.servidores.listar(ctx),
     ])
     // Pequena espera para o próprio acesso aparecer na lista (o log é gravado em segundo plano).
     const acessos = rh ? await new Promise((r) => setTimeout(r, 300)).then(() => servicos.logs.listar({ alvo: servidor.id }, ctx)) : null
-    const raras = new Set(Object.entries(contagem).filter(([, n]) => n <= ALERTA_RISCO.raridadeMaxPessoas).map(([c]) => c))
+    const raras = new Set([...contarCompetencias(todos)].filter(([, n]) => n <= ALERTA_RISCO.raridadeMaxPessoas).map(([c]) => c))
     return { servidor, documentos, processos, solicitacoes, acessos, raras }
   }, [matricula, ctx, rh])
 
   if (carregando) return <Carregando texto="Abrindo ficha…" />
   if (erro) return <MensagemErro>{erro}</MensagemErro>
-  if (!dados) return <NenhumResultado titulo="Ficha não encontrada">O servidor não existe ou não pertence à sua unidade.</NenhumResultado>
+  if (!dados) return <NenhumResultado titulo="Ficha não encontrada">Não há servidor com a matrícula {matricula}.</NenhumResultado>
   const { servidor: s, documentos, processos, solicitacoes, acessos, raras } = dados
   const pendentes = solicitacoes.filter((x) => x.status === 'pendente').length
 
