@@ -42,17 +42,17 @@ UM ÚNICO SITE, usado no computador (teclado e mouse) e no totem (toque). É o m
 sistema; só muda o tamanho e o formato da tela. O que cada pessoa vê depende do
 nível de acesso da sua matrícula:
 
-1. Policial (servidor): em qualquer aparelho, vê só a própria ficha, imprime o extrato,
-   envia cursos/documentos e acompanha os próprios pedidos.
-2. Gestor de unidade: tudo do policial + fichas dos servidores da própria unidade e
-   aprovação de pedidos da unidade.
-3. RH / superintendência: tudo do gestor, para todas as unidades + indicadores e alertas,
-   banco de talentos, relatórios, documentos, processos, logs e usuários.
+1. Policial (matrícula de demonstração 0001): em qualquer aparelho, vê só a própria
+   ficha, imprime o extrato, envia cursos/documentos e acompanha os próprios pedidos.
+   Não entra no painel completo.
+2. RH / Gestão (matrícula de demonstração 0002): tudo do policial + fichas dos
+   servidores de todas as unidades, aprovação de pedidos, indicadores e alertas, banco
+   de talentos, relatórios, documentos, processos, logs e usuários (painel completo).
 
-O RH trabalha principalmente no computador. Quando um gestor ou alguém da
-superintendência visita uma unidade, faz login no totem com a própria matrícula e
-acessa as funções do seu nível (consultar fichas, aprovar pedidos, abrir o painel
-completo) sem depender de um computador.
+O RH / Gestão trabalha principalmente no computador. Quando alguém do RH / Gestão
+visita uma unidade, faz login no totem com a própria matrícula e acessa as funções do
+seu nível (consultar fichas, aprovar pedidos, abrir o painel completo) sem depender de
+um computador.
 
 ### Ficha do servidor (5 blocos)
 1. Dados básicos: nome, matrícula, cargo e informações funcionais.
@@ -73,7 +73,7 @@ O sistema precisa ter um fluxo claro de atualização para não ficar desatualiz
    (ex.: "curso X + mais de 10 anos de casa + lotado na unidade Y").
 2. Alerta de risco por unidade: cruza previsão de aposentadoria com competências e
    mostra unidades que vão perder pessoas ou competências raras (verde/amarelo/vermelho).
-3. Autoatendimento: o servidor envia cursos/documentos e o gestor aprova. Cada ficha
+3. Autoatendimento: o servidor envia cursos/documentos e o RH / Gestão aprova. Cada ficha
    mostra "atualizada há X meses".
 4. LGPD visível: registro de quem acessou cada ficha e quando; relatórios agregados não
    mostram grupos pequenos (menos de 5 pessoas) para não identificar ninguém.
@@ -86,35 +86,37 @@ O argumento de inovação: trazer recursos de planejamento que hoje só existem 
 sistemas de RH caros, numa solução simples e de baixo custo, feita para a PRF-PI.
 
 ## Perfis de acesso
-- RH / administrador: vê e edita tudo, de qualquer unidade.
-- Gestor de unidade: vê só os servidores da própria unidade e aprova os pedidos deles
-  (o próprio pedido do gestor é aprovado pelo RH).
-- Servidor: vê só a própria ficha e envia atualizações para aprovação.
+São dois níveis, definidos pela matrícula:
+- Policial (0001 na demonstração): vê só a própria ficha e envia atualizações para
+  aprovação. Não acessa o painel completo.
+- RH / Gestão (0002 na demonstração): vê e edita tudo, de todas as unidades, e aprova
+  os pedidos dos servidores.
+- Ninguém aprova o próprio pedido: o pedido de alguém do RH / Gestão é analisado por
+  outra pessoa do RH / Gestão.
 - As permissões valem igual no computador e no totem.
 
 ## Totem
 - Mesmo site, em tela de toque. Login obrigatório (matrícula + senha).
 - Menu do policial: Minha ficha, Meus documentos e processos, Enviar curso ou documento,
   Minhas solicitações, Imprimir extrato da ficha.
-- Gestor e RH, no totem, veem o menu do policial + "Fichas dos servidores" (o gestor só
-  da unidade), "Pedidos para aprovar" e "Abrir painel completo".
+- RH / Gestão, no totem, vê o menu do policial + "Fichas dos servidores" (todas as
+  unidades), "Pedidos para aprovar" (com contador) e "Abrir painel completo".
 - Botões e textos grandes; teclado virtual em tela de toque e teclado físico no computador.
 - Saída automática após 2 minutos sem uso. Fica em área interna da unidade.
 - Por que totem e não só celular: segurança (aparelho da PRF, em modo quiosque, na rede
   interna, sem guardar dados, com saída automática e log de origem "totem"), impressão
-  do extrato na hora, e acesso rápido para gestores e superintendência em visita às
-  unidades.
+  do extrato na hora, e acesso rápido para o RH / Gestão em visita às unidades.
 - Hardware de baixo custo: tablet ou computador já existente + suporte antifurto +
   impressora. Começar com piloto em 1 ou 2 unidades.
 
 ## Stack e decisões técnicas
 - React + TypeScript + Vite + TailwindCSS, deploy na Vercel.
 - Firebase: Authentication (cadastro e login de usuários reais) e Firestore.
-- Regras de segurança do Firestore garantem o acesso por perfil e unidade.
-  É a LGPD funcionando no back-end, não só na tela.
-- Matrículas com 4 dígitos.
+- Regras de segurança do Firestore garantem o acesso por nível (Policial: só a própria
+  matrícula; RH / Gestão: tudo). É a LGPD funcionando no back-end, não só na tela.
+- Matrículas com 4 dígitos, tratadas como texto (zeros à esquerda contam).
 - Manter um modo demonstração com dados fictícios. Contas de demonstração usam o
-  nome "Camila" (uma para cada perfil).
+  nome "Camila", uma para cada nível: 0001 (Policial) e 0002 (RH / Gestão).
 - Nunca usar dados reais de servidores.
 - Regra de aposentadoria: usar uma regra simplificada e configurável
   (idade e tempo de serviço mínimos). A regra exata seria definida pelo RH da PRF.

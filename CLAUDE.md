@@ -9,7 +9,7 @@ Protótipo acadêmico (projeto integrador SENAI) para a **Superintendência Regi
 ## Problema (resumo da PROPOSTA)
 Informações dos servidores espalhadas em 9 sistemas/sites e planilhas sem padrão; tempo de serviço, lotação, competências, capacitações e aposentadoria cruzados à mão; sem banco de talentos.
 
-## Um único site, dois níveis de acesso (decisão do usuário em 10/11/2026)
+## Um único site, dois níveis de acesso (decisão registrada na PROPOSTA)
 O mesmo site no computador e no totem; o que cada um vê depende do nível da matrícula. Há só **dois perfis** (o antigo "gestor de unidade", com escopo por unidade, foi **removido** do código, das telas, dos serviços, do modo local e das `firestore.rules`):
 - **Policial** (perfil `servidor`, rótulo "Policial"): no totem e no computador vê **só a própria ficha**. Menu: Minha ficha · Meus documentos e processos · Enviar curso ou documento · Minhas solicitações · Imprimir extrato. **Não entra no painel.** Faixa abaixo do "Olá": "Aqui você consulta a sua ficha".
 - **RH / Gestão** (perfil `admin`, rótulo "RH / Gestão"): vê tudo, de todas as unidades. No totem: o menu do policial + **Fichas dos servidores** (`/totem/fichas`, `/totem/ficha/:matricula`), **Pedidos para aprovar** (`/totem/pedidos`, com contador) e **Abrir painel completo** (`/admin`). Faixa: "Você também pode consultar e aprovar todos os servidores da PRF-PI".
@@ -19,7 +19,6 @@ O mesmo site no computador e no totem; o que cada um vê depende do nível da ma
 - Extrato: seções escolhidas, A4 (`@media print`), código `SYN-XXXX-XXXX` + QR para `/verificar/CODIGO`, sem CPF, log `impressao`; coleção `extratos` guarda só campos de verificação (`src/services/extratos.ts`).
 - **Painel** (`/admin`): só RH / Gestão, todas as unidades: fichas, busca por matrícula/nome e por nº de processo, talentos, indicadores e alertas, solicitações, documentos, processos, relatórios, logs, usuários. Usável em tela de toque (`pointer-coarse:` no `ui.tsx`/menu; `Tabela` com rolagem horizontal).
 - Páginas públicas: `/privacidade` e `/verificar/:codigo`.
-- **Atenção:** a `docs/PROPOSTA.md` atual ainda descreve três perfis (com "gestor de unidade"). A decisão de dois níveis acima foi dada explicitamente pelo usuário e prevalece até a PROPOSTA ser alinhada.
 
 ## Solução (resumo da PROPOSTA)
 - Sistema único em que tudo fica ligado à **matrícula** (prontuário), no computador e num **totem** (touch, área interna, login obrigatório).
